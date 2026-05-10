@@ -4,6 +4,8 @@ export interface Resources {
   prestige: number;
   herbs: number;
   ore: number;
+  beastMaterials: number;
+  contribution: number;
 }
 
 export interface Buildings {
@@ -12,18 +14,24 @@ export interface Buildings {
   cave: number;
   alchemyLab: number;
   herbGarden: number;
+  armory: number;
+  library: number;
+  market: number;
+  arena: number;
 }
 
 export interface Artifact {
   id: string;
   name: string;
-  type: 'weapon' | 'armor' | 'accessory';
+  type: 'weapon' | 'armor' | 'accessory' | 'talisman';
   rarity: Rarity;
   powerBonus: number;
 }
 
 export interface Inventory {
   breakthroughPills: number;
+  recoveryPills: number;
+  strengthPills: number;
   artifacts?: Artifact[];
 }
 
@@ -66,15 +74,20 @@ export interface Disciple {
   element: Element;
   level: number;
   exp?: number;
+  health?: number;
   power: number;
+  basePower?: number;
   loyalty: number;
+  buffs?: {
+    strengthUntil?: number;
+  };
   cultivationStage: number; // index in CULTIVATION_STAGES
   type?: 'inner' | 'outer';
   rank?: RankType;
   equipment?: {
     weapon?: Artifact;
     armor?: Artifact;
-    accessory?: Artifact;
+    talisman?: Artifact;
   };
 }
 
@@ -89,7 +102,7 @@ export interface GameState {
   team?: string[];
   formation?: FormationType;
   buildingUpgrades?: Partial<Record<keyof Buildings, { targetLevel: number, finishAt: number }>>;
-  alchemyTask?: { count: number; finishAt: number };
+  alchemyTask?: { type: 'breakthroughPills' | 'recoveryPills' | 'strengthPills'; count: number; finishAt: number };
   craftingTask?: { artifact: Artifact; finishAt: number };
   cultivatingTasks?: Record<string, { finishAt: number }>;
   arena?: { 

@@ -1,17 +1,126 @@
 import { useState, useEffect, useCallback } from 'react';
 import { GameState, Disciple, FormationType } from '../types';
 
-const INITIAL_STATE: GameState = {
-  resources: { stones: 1000, qi: 100, prestige: 10, herbs: 0, ore: 0 },
-  buildings: { mainHall: 1, mine: 1, cave: 1, alchemyLab: 0, herbGarden: 0 },
-  inventory: { breakthroughPills: 0, artifacts: [] },
-  disciples: [],
+const generateId = () => Math.random().toString(36).substring(2, 9);
+
+const createInitialDisciples = (): Disciple[] => [
+  {
+    id: generateId(),
+    name: 'Линь Фэн',
+    rarity: 'Редкий',
+    role: 'Воин',
+    element: 'Огонь',
+    level: 5,
+    power: 120,
+    loyalty: 100,
+    cultivationStage: 1,
+    type: 'inner',
+    rank: 'Внутренний ученик'
+  },
+  {
+    id: generateId(),
+    name: 'Ван Линь',
+    rarity: 'Обычный',
+    role: 'Атакующий',
+    element: 'Вода',
+    level: 3,
+    power: 80,
+    loyalty: 90,
+    cultivationStage: 0,
+    type: 'inner',
+    rank: 'Внутренний ученик'
+  },
+  {
+    id: generateId(),
+    name: 'Бай Юй',
+    rarity: 'Обычный',
+    role: 'Поддержка',
+    element: 'Дерево',
+    level: 3,
+    power: 75,
+    loyalty: 90,
+    cultivationStage: 0,
+    type: 'inner',
+    rank: 'Внутренний ученик'
+  },
+  {
+    id: generateId(),
+    name: 'Чжан Сань',
+    rarity: 'Обычный',
+    role: 'Танк',
+    element: 'Земля',
+    level: 1,
+    power: 30,
+    loyalty: 80,
+    cultivationStage: 0,
+    type: 'outer',
+    rank: 'Внешний ученик'
+  },
+  {
+    id: generateId(),
+    name: 'Ли Сы',
+    rarity: 'Обычный',
+    role: 'Маг',
+    element: 'Огонь',
+    level: 1,
+    power: 35,
+    loyalty: 80,
+    cultivationStage: 0,
+    type: 'outer',
+    rank: 'Внешний ученик'
+  },
+  {
+    id: generateId(),
+    name: 'Ван Ву',
+    rarity: 'Обычный',
+    role: 'Ассасин',
+    element: 'Дерево',
+    level: 1,
+    power: 40,
+    loyalty: 80,
+    cultivationStage: 0,
+    type: 'outer',
+    rank: 'Внешний ученик'
+  },
+  {
+    id: generateId(),
+    name: 'Чжао Лю',
+    rarity: 'Обычный',
+    role: 'Воин',
+    element: 'Металл',
+    level: 1,
+    power: 35,
+    loyalty: 80,
+    cultivationStage: 0,
+    type: 'outer',
+    rank: 'Внешний ученик'
+  },
+  {
+    id: generateId(),
+    name: 'Сунь Ци',
+    rarity: 'Обычный',
+    role: 'Поддержка',
+    element: 'Вода',
+    level: 1,
+    power: 30,
+    loyalty: 80,
+    cultivationStage: 0,
+    type: 'outer',
+    rank: 'Внешний ученик'
+  }
+];
+
+const getInitialState = (): GameState => ({
+  resources: { stones: 1000, qi: 100, prestige: 10, herbs: 0, ore: 0, beastMaterials: 0, contribution: 0 },
+  buildings: { mainHall: 1, mine: 1, cave: 1, alchemyLab: 0, herbGarden: 0, armory: 0, library: 0, market: 0, arena: 0 },
+  inventory: { breakthroughPills: 0, recoveryPills: 0, strengthPills: 0, artifacts: [] },
+  disciples: createInitialDisciples(),
   teams: [
     { id: 'team_1', name: 'Отряд 1', members: [], formation: 'Круговая оборона' }
   ],
   activeTeamId: 'team_1',
   lastUpdate: Date.now(),
-};
+});
 
 export function useGameState() {
   const [state, setState] = useState<GameState>(() => {
@@ -28,12 +137,26 @@ export function useGameState() {
           }];
           parsed.activeTeamId = 'team_1';
         }
+        
+        // Ensure starting disciples exist if the save has no disciples (e.g. wiped save or legacy bug)
+        if (!parsed.disciples || parsed.disciples.length === 0) {
+            parsed.disciples = createInitialDisciples();
+        }
+
+        const initialBuildings = getInitialState().buildings;
+        if (!parsed.buildings) parsed.buildings = initialBuildings;
+        parsed.buildings = { ...initialBuildings, ...parsed.buildings };
+
+        const initialInventory = getInitialState().inventory;
+        if (!parsed.inventory) parsed.inventory = initialInventory;
+        parsed.inventory = { ...initialInventory, ...parsed.inventory };
+        
         return parsed;
       }
     } catch (e) {
       console.error('Failed to load save', e);
     }
-    return INITIAL_STATE;
+    return getInitialState();
   });
 
   // Save to local storage on changes
@@ -73,7 +196,8 @@ export function useGameState() {
         }
 
         if (prev.alchemyTask && now >= prev.alchemyTask.finishAt) {
-           newInventory.breakthroughPills += prev.alchemyTask.count;
+           const type = prev.alchemyTask.type as keyof typeof newInventory;
+           newInventory[type] = ((newInventory[type] as number) || 0) + prev.alchemyTask.count;
            newAlchemyTask = undefined;
            stateChanged = true;
         }
@@ -83,6 +207,18 @@ export function useGameState() {
            newCraftingTask = undefined;
            stateChanged = true;
         }
+
+        newDisciples = newDisciples.map(d => {
+          if (d.buffs?.strengthUntil && now >= d.buffs.strengthUntil) {
+            stateChanged = true;
+            return {
+              ...d,
+              power: Math.max(0, d.power - 200),
+              buffs: { ...d.buffs, strengthUntil: undefined }
+            };
+          }
+          return d;
+        });
 
         if (prev.cultivatingTasks) {
           Object.entries(prev.cultivatingTasks).forEach(([dId, task]) => {
@@ -116,6 +252,8 @@ export function useGameState() {
             qi: (prev.pendingResources?.qi || 0) + qiIncome,
             herbs: (prev.pendingResources?.herbs || 0) + herbsIncome,
             prestige: prev.pendingResources?.prestige || 0,
+            beastMaterials: prev.pendingResources?.beastMaterials || 0,
+            contribution: prev.pendingResources?.contribution || 0,
           },
           lastUpdate: now,
         };
@@ -124,19 +262,23 @@ export function useGameState() {
     return () => clearInterval(interval);
   }, []);
 
-  const upgradeBuilding = useCallback((buildingId: keyof GameState['buildings'], cost: number, durationSeconds: number) => {
+  const upgradeBuilding = useCallback((buildingId: keyof GameState['buildings'], costPattern: Record<string, number>, durationSeconds: number) => {
     setState((prev) => {
-      if (prev.resources.stones >= cost && !prev.buildingUpgrades?.[buildingId]) {
+      const canUpgrade = Object.entries(costPattern).every(([k, v]) => (prev.resources[k as keyof typeof prev.resources] || 0) >= v);
+      if (canUpgrade && !prev.buildingUpgrades?.[buildingId]) {
+        const newResources = { ...prev.resources };
+        Object.entries(costPattern).forEach(([k, v]) => {
+            const key = k as keyof typeof newResources;
+            newResources[key] = (newResources[key] || 0) - v;
+        });
+        
         return {
           ...prev,
-          resources: {
-            ...prev.resources,
-            stones: prev.resources.stones - cost,
-          },
+          resources: newResources,
           buildingUpgrades: {
             ...prev.buildingUpgrades,
             [buildingId]: {
-              targetLevel: prev.buildings[buildingId] + 1,
+              targetLevel: (prev.buildings[buildingId] || 0) + 1,
               finishAt: Date.now() + durationSeconds * 1000
             }
           }
@@ -202,17 +344,21 @@ export function useGameState() {
     });
   }, []);
 
-  const craftPill = useCallback((costHerbs: number, costQi: number, durationSeconds: number) => {
+  const craftPill = useCallback((pillType: 'breakthroughPills' | 'recoveryPills' | 'strengthPills', cost: Record<string, number>, durationSeconds: number) => {
     setState((prev) => {
-      if (prev.buildings.alchemyLab > 0 && prev.resources.herbs >= costHerbs && prev.resources.qi >= costQi && !prev.alchemyTask) {
+      const canCraft = Object.entries(cost).every(([k, v]) => (prev.resources[k as keyof typeof prev.resources] || 0) >= v);
+      if (prev.buildings.alchemyLab > 0 && canCraft && !prev.alchemyTask) {
+        const newResources = { ...prev.resources };
+        Object.entries(cost).forEach(([k, v]) => {
+            const key = k as keyof typeof newResources;
+            newResources[key] = (newResources[key] || 0) - v;
+        });
+        
         return {
           ...prev,
-          resources: {
-            ...prev.resources,
-            herbs: prev.resources.herbs - costHerbs,
-            qi: prev.resources.qi - costQi,
-          },
+          resources: newResources,
           alchemyTask: {
+            type: pillType,
             count: 1,
             finishAt: Date.now() + durationSeconds * 1000
           }
@@ -228,6 +374,7 @@ export function useGameState() {
         const remainingMs = Math.max(0, prev.alchemyTask.finishAt - Date.now());
         const expectedQi = Math.ceil(remainingMs / 1000) * 10;
         if (prev.resources.qi >= expectedQi) {
+          const pType = prev.alchemyTask.type;
           return {
             ...prev,
             resources: {
@@ -236,7 +383,7 @@ export function useGameState() {
             },
             inventory: {
               ...prev.inventory,
-              breakthroughPills: prev.inventory.breakthroughPills + prev.alchemyTask.count
+              [pType]: prev.inventory[pType] + prev.alchemyTask.count
             },
             alchemyTask: undefined
           };
@@ -246,16 +393,18 @@ export function useGameState() {
     });
   }, []);
 
-  const craftArtifact = useCallback((artifact: any, costOre: number, costStones: number, durationSeconds: number) => {
+  const craftArtifact = useCallback((artifact: any, cost: Record<string, number>, durationSeconds: number) => {
     setState((prev) => {
-      if (prev.resources.ore >= costOre && prev.resources.stones >= costStones && !prev.craftingTask) {
+      const canCraft = Object.entries(cost).every(([k, v]) => (prev.resources[k as keyof typeof prev.resources] || 0) >= v);
+      if (canCraft && !prev.craftingTask) {
+        const newResources = { ...prev.resources };
+        Object.entries(cost).forEach(([k, v]) => {
+            const key = k as keyof typeof newResources;
+            newResources[key] = (newResources[key] || 0) - v;
+        });
         return {
           ...prev,
-          resources: {
-            ...prev.resources,
-            ore: prev.resources.ore - costOre,
-            stones: prev.resources.stones - costStones,
-          },
+          resources: newResources,
           craftingTask: {
             artifact,
             finishAt: Date.now() + durationSeconds * 1000
@@ -331,7 +480,7 @@ export function useGameState() {
     });
   }, []);
 
-  const unequipArtifact = useCallback((discipleId: string, slot: 'weapon'|'armor'|'accessory') => {
+  const unequipArtifact = useCallback((discipleId: string, slot: 'weapon'|'armor'|'talisman') => {
     setState((prev) => {
       const newDisciples = [...prev.disciples];
       const dIndex = newDisciples.findIndex(d => d.id === discipleId);
@@ -352,6 +501,37 @@ export function useGameState() {
         inventory: {
           ...prev.inventory,
           artifacts: [...(prev.inventory.artifacts || []), artifact],
+        },
+        disciples: newDisciples
+      };
+    });
+  }, []);
+
+  const usePill = useCallback((discipleId: string, pillType: 'recoveryPills' | 'strengthPills') => {
+    setState((prev) => {
+      if ((prev.inventory[pillType] || 0) <= 0) return prev;
+      
+      const newDisciples = [...prev.disciples];
+      const dIndex = newDisciples.findIndex(d => d.id === discipleId);
+      if (dIndex === -1) return prev;
+
+      const d = { ...newDisciples[dIndex] };
+      
+      if (pillType === 'recoveryPills') {
+        d.health = Math.min(100, (d.health !== undefined ? d.health : 100) + 50);
+      } else if (pillType === 'strengthPills') {
+        d.buffs = { ...d.buffs, strengthUntil: Date.now() + 60 * 1000 * 10 }; // 10 minutes buff
+        d.basePower = d.basePower || d.power;
+        d.power += 200; // Temporary massive power bump
+      }
+
+      newDisciples[dIndex] = d;
+
+      return {
+        ...prev,
+        inventory: {
+          ...prev.inventory,
+          [pillType]: prev.inventory[pillType] - 1
         },
         disciples: newDisciples
       };
@@ -481,6 +661,8 @@ export function useGameState() {
           qi: prev.resources.qi + (prev.pendingResources.qi || 0),
           herbs: prev.resources.herbs + (prev.pendingResources.herbs || 0),
           prestige: prev.resources.prestige + (prev.pendingResources.prestige || 0),
+          beastMaterials: (prev.resources.beastMaterials || 0) + (prev.pendingResources.beastMaterials || 0),
+          contribution: (prev.resources.contribution || 0) + (prev.pendingResources.contribution || 0),
         },
         pendingResources: {
           stones: 0,
@@ -488,6 +670,8 @@ export function useGameState() {
           qi: 0,
           herbs: 0,
           prestige: 0,
+          beastMaterials: 0,
+          contribution: 0,
         }
       };
     });
@@ -495,7 +679,7 @@ export function useGameState() {
 
   const clearSave = useCallback(() => {
     localStorage.removeItem('wuxia_sect_save_v2');
-    setState({ ...INITIAL_STATE, lastUpdate: Date.now() });
+    setState({ ...getInitialState(), lastUpdate: Date.now() });
   }, []);
 
   const addCheats = useCallback(() => {
@@ -507,6 +691,8 @@ export function useGameState() {
         herbs: prev.resources.herbs + 10000,
         ore: prev.resources.ore + 10000,
         prestige: prev.resources.prestige + 500,
+        beastMaterials: (prev.resources.beastMaterials || 0) + 1000,
+        contribution: (prev.resources.contribution || 0) + 1000,
       },
       inventory: {
         ...prev.inventory,
@@ -515,5 +701,5 @@ export function useGameState() {
     }));
   }, []);
 
-  return { state, upgradeBuilding, instantUpgradeBuilding, claimResources, addDisciple, changeDiscipleRank, craftPill, instantCraftPill, craftArtifact, instantCraftArtifact, equipArtifact, unequipArtifact, promoteDisciple, instantPromoteDisciple, claimArenaReward, updateTactics, updateTeams, clearSave, addCheats };
+  return { state, upgradeBuilding, instantUpgradeBuilding, claimResources, addDisciple, changeDiscipleRank, craftPill, instantCraftPill, craftArtifact, instantCraftArtifact, equipArtifact, unequipArtifact, usePill, promoteDisciple, instantPromoteDisciple, claimArenaReward, updateTactics, updateTeams, clearSave, addCheats };
 }

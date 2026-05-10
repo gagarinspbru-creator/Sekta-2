@@ -20,7 +20,7 @@ export const getDiscipleRank = (d: any) => d.rank || (d.type === 'inner' || (!d.
 export const isInnerDisciple = (d: any) => ['Глава секты', 'Старейшина', 'Элита', 'Внутренний ученик', 'Новобранец'].includes(getDiscipleRank(d));
 
 export default function App() {
-  const { state, upgradeBuilding, instantUpgradeBuilding, addDisciple, changeDiscipleRank, craftPill, instantCraftPill, craftArtifact, instantCraftArtifact, equipArtifact, unequipArtifact, promoteDisciple, instantPromoteDisciple, clearSave, addCheats, claimArenaReward, updateTactics, updateTeams, claimResources } = useGameState();
+  const { state, upgradeBuilding, instantUpgradeBuilding, addDisciple, changeDiscipleRank, craftPill, instantCraftPill, craftArtifact, instantCraftArtifact, equipArtifact, unequipArtifact, usePill, promoteDisciple, instantPromoteDisciple, clearSave, addCheats, claimArenaReward, updateTactics, updateTeams, claimResources } = useGameState();
   const [currentView, setCurrentView] = useState<'overview' | 'buildings' | 'disciples' | 'gacha' | 'alchemy' | 'cultivation' | 'arena' | 'teams' | 'tactics'>('overview');
 
   const { resources } = state;
@@ -114,6 +114,8 @@ export default function App() {
             <ResourceItem value={Math.floor(resources.qi)} label="Энергия Ци" colorScheme="purple" symbol="⚡" />
             <ResourceItem value={Math.floor(resources.herbs)} label="Травы" colorScheme="sky" symbol="🌿" />
             <ResourceItem value={Math.floor(resources.ore)} label="Руда" colorScheme="amber" symbol="⛏" />
+            <ResourceItem value={Math.floor(resources.beastMaterials || 0)} label="Материалы" colorScheme="rose" symbol="🦴" />
+            <ResourceItem value={Math.floor(resources.contribution || 0)} label="Вклад" colorScheme="emerald" symbol="✦" />
             <ResourceItem value={resources.prestige} label="Репутация" colorScheme="amber" symbol="★" />
           </div>
           <div className="text-right hidden sm:block">
@@ -129,7 +131,7 @@ export default function App() {
           <div className="max-w-5xl mx-auto">
             {currentView === 'overview' && <OverviewView state={state} />}
             {currentView === 'buildings' && <BuildingsView state={state} onUpgrade={upgradeBuilding} onInstantUpgrade={instantUpgradeBuilding} onClaim={claimResources} />}
-            {currentView === 'disciples' && <DisciplesView state={state} onEquip={equipArtifact} onUnequip={unequipArtifact} onChangeRank={changeDiscipleRank} />}
+            {currentView === 'disciples' && <DisciplesView state={state} onEquip={equipArtifact} onUnequip={unequipArtifact} onChangeRank={changeDiscipleRank} onUsePill={usePill} />}
             {currentView === 'gacha' && <GachaView state={state} onAdd={addDisciple} />}
             {currentView === 'alchemy' && <AlchemyView state={state} onCraftPill={craftPill} onInstantCraftPill={instantCraftPill} onCraftArtifact={craftArtifact} onInstantCraftArtifact={instantCraftArtifact} />}
             {currentView === 'cultivation' && <CultivationView state={state} onPromote={promoteDisciple} onInstantPromote={instantPromoteDisciple} />}
@@ -173,11 +175,13 @@ function NavItem({ label, isActive, onClick, icon }: { label: string, isActive: 
   );
 }
 
-function ResourceItem({ value, label, colorScheme, symbol }: { value: number, label: string, colorScheme: 'sky' | 'purple' | 'amber', symbol: string }) {
+function ResourceItem({ value, label, colorScheme, symbol }: { value: number, label: string, colorScheme: 'sky' | 'purple' | 'amber' | 'emerald' | 'rose', symbol: string }) {
   const colorMap = {
     sky: 'text-sky-200',
     purple: 'text-purple-200',
-    amber: 'text-amber-200'
+    amber: 'text-amber-200',
+    emerald: 'text-emerald-200',
+    rose: 'text-rose-200'
   };
   const colorClass = colorMap[colorScheme];
   
@@ -198,7 +202,7 @@ const BUILDING_DATA: Record<string, any> = {
       { label: 'Лимит учеников', value: 10 + level * 5, isRate: false },
       { label: 'Бонус престижа', value: `+${level * 10}%`, isRate: false }
     ],
-    getCost: (level: number) => level * 500
+    getCost: (level: number) => ({ stones: level > 0 ? level * 500 : 500 })
   },
   cave: {
     title: "Духовная пещера",
@@ -207,17 +211,7 @@ const BUILDING_DATA: Record<string, any> = {
     getStats: (level: number) => [
       { label: 'Производство Ци', value: level * 2, isRate: true, symbol: 'Ци' }
     ],
-    getCost: (level: number) => level * 300
-  },
-  mine: {
-    title: "Рудник камней",
-    description: "Автоматическая добыча Духовных камней.",
-    icon: <Pickaxe className="text-sky-400 opacity-80" size={32} />,
-    getStats: (level: number) => [
-      { label: 'Добыча камней', value: level * 5, isRate: true, symbol: '֏' },
-      { label: 'Добыча руды', value: level * 1, isRate: true, symbol: 'Руда' }
-    ],
-    getCost: (level: number) => level * 400
+    getCost: (level: number) => ({ stones: level > 0 ? level * 300 : 300, ore: level > 0 ? level * 150 : 150 })
   },
   herbGarden: {
     title: "Духовные поля",
@@ -226,17 +220,67 @@ const BUILDING_DATA: Record<string, any> = {
     getStats: (level: number) => [
       { label: 'Сбор трав', value: level * 1.5, isRate: true, symbol: 'Травы' }
     ],
-    getCost: (level: number) => level > 0 ? level * 400 + 400 : 500
+    getCost: (level: number) => ({ stones: level > 0 ? level * 400 + 400 : 500 })
   },
   alchemyLab: {
-    title: "Лаборатория",
-    description: "Позволяет создавать пилюли для прорыва.",
+    title: "Алхимическая лаборатория",
+    description: "Крафт пилюль (лечение, прорыв, сила).",
     icon: <FlaskConical className="text-purple-400 opacity-80" size={32} />,
     getStats: (level: number) => [
       { label: 'Шанс успеха', value: `${Math.min(95, 50 + level * 5)}%`, isRate: false },
       { label: 'Время крафта', value: `${Math.max(1, 10 - level)}с`, isRate: false }
     ],
-    getCost: (level: number) => level > 0 ? level * 800 + 800 : 1000
+    getCost: (level: number) => ({ stones: level > 0 ? level * 800 + 800 : 1000, herbs: level > 0 ? level * 200 : 200 })
+  },
+  armory: {
+    title: "Оружейная",
+    description: "Крафт оружия, брони, талисманов.",
+    icon: <Shield className="text-stone-400 opacity-80" size={32} />,
+    getStats: (level: number) => [
+      { label: 'Качество крафта', value: `+${level * 2}%`, isRate: false },
+      { label: 'Время крафта', value: `${Math.max(1, 15 - level)}с`, isRate: false }
+    ],
+    getCost: (level: number) => ({ stones: level > 0 ? level * 600 + 600 : 800, ore: level > 0 ? level * 200 : 200 })
+  },
+  library: {
+    title: "Библиотека",
+    description: "Изучение техник, мануалов, расшифровка свитков.",
+    icon: <Scroll className="text-amber-200 opacity-80" size={32} />,
+    getStats: (level: number) => [
+      { label: 'Скорость изучения', value: `+${level * 10}%`, isRate: false },
+      { label: 'Макс. техник', value: 2 + level, isRate: false }
+    ],
+    getCost: (level: number) => ({ stones: level > 0 ? level * 500 + 500 : 700 })
+  },
+  mine: {
+    title: "Рудник",
+    description: "Добыча духовных камней и руды.",
+    icon: <Pickaxe className="text-sky-400 opacity-80" size={32} />,
+    getStats: (level: number) => [
+      { label: 'Добыча камней', value: level * 5, isRate: true, symbol: '֏' },
+      { label: 'Добыча руды', value: level * 1, isRate: true, symbol: 'Руда' }
+    ],
+    getCost: (level: number) => ({ stones: level > 0 ? level * 400 : 400 })
+  },
+  market: {
+    title: "Рынок",
+    description: "Торговля ресурсами, вербовка учеников.",
+    icon: <Users className="text-emerald-400 opacity-80" size={32} />,
+    getStats: (level: number) => [
+      { label: 'Скидка на рынке', value: `${Math.min(50, level * 2)}%`, isRate: false },
+      { label: 'Слоты вербовки', value: 1 + level, isRate: false }
+    ],
+    getCost: (level: number) => ({ stones: level > 0 ? level * 500 + 500 : 600 })
+  },
+  arena: {
+    title: "Арена",
+    description: "Проведение турниров, тренировочные бои.",
+    icon: <Swords className="text-red-400 opacity-80" size={32} />,
+    getStats: (level: number) => [
+      { label: 'Награда Арены', value: `+${level * 5}%`, isRate: false },
+      { label: 'Слоты турнира', value: 4 + level * 2, isRate: false }
+    ],
+    getCost: (level: number) => ({ stones: level > 0 ? level * 1000 + 1000 : 1500 })
   }
 };
 
@@ -360,9 +404,9 @@ function BuildingsView({ state, onUpgrade, onInstantUpgrade, onClaim }: { state:
 
   if (selectedType && BUILDING_DATA[selectedType]) {
     const data = BUILDING_DATA[selectedType];
-    const level = state.buildings[selectedType];
-    const cost = data.getCost(level);
-    const canUpgrade = state.resources.stones >= cost;
+    const level = state.buildings[selectedType] || 0;
+    const costPattern = data.getCost(level);
+    const canUpgrade = Object.entries(costPattern).every(([k, v]) => (state.resources[k as keyof typeof state.resources] || 0) >= (v as number));
     const stats = data.getStats(level);
     const nextStats = data.getStats(level + 1);
     
@@ -475,8 +519,18 @@ function BuildingsView({ state, onUpgrade, onInstantUpgrade, onClaim }: { state:
 
           <div className="pt-6 border-t border-zinc-800 flex flex-col md:flex-row justify-between items-center mt-8 gap-4">
             <div className="flex flex-col text-center md:text-left self-start md:self-auto">
-              <span className="text-[10px] uppercase text-stone-500 mb-1">Стоимость улучшения (Время: {durationSeconds / 60} мин)</span>
-              <span className={`${canUpgrade ? 'text-amber-400' : 'text-red-400'} font-mono text-lg`}>{cost} <span className="text-sm text-stone-500">֏</span></span>
+              <span className="text-[10px] uppercase text-stone-500 mb-1">Стоимость (Время: {durationSeconds / 60} мин)</span>
+              <div className="flex gap-4">
+                {Object.entries(costPattern).map(([k, v]) => {
+                    const symbols: any = { stones: '֏', ore: 'Руда', herbs: 'Травы', qi: 'Ци' };
+                    const hasEnough = (state.resources[k as keyof typeof state.resources] || 0) >= (v as number);
+                    return (
+                        <span key={k} className={`${hasEnough ? 'text-amber-400' : 'text-red-400'} font-mono text-lg`}>
+                            {v as number} <span className="text-sm text-stone-500">{symbols[k] || k}</span>
+                        </span>
+                    );
+                })}
+              </div>
             </div>
             
             <div className="flex gap-2 w-full md:w-auto">
@@ -504,7 +558,7 @@ function BuildingsView({ state, onUpgrade, onInstantUpgrade, onClaim }: { state:
                 <motion.button 
                   whileHover={canUpgrade ? { scale: 1.02 } : {}}
                   whileTap={canUpgrade ? { scale: 0.98 } : {}}
-                  onClick={() => onUpgrade(selectedType, cost, durationSeconds)}
+                  onClick={() => onUpgrade(selectedType, costPattern, durationSeconds)}
                   disabled={!canUpgrade}
                   className={`w-full md:w-auto px-8 py-3 border text-xs uppercase font-bold tracking-widest transition-colors ${
                     canUpgrade 
@@ -603,11 +657,42 @@ function BuildingsView({ state, onUpgrade, onInstantUpgrade, onClaim }: { state:
             now={now}
             onClick={() => setSelectedType('alchemyLab')}
           />
-          
-          <div className="p-6 bg-zinc-900/50 border border-zinc-800/50 border-dashed rounded-sm flex flex-col items-center justify-center hover:border-amber-500/30 transition-colors cursor-pointer text-stone-500 hover:text-amber-400 group min-h-[160px]">
-            <span className="text-4xl font-light mb-2 group-hover:scale-110 transition-transform">+</span>
-            <span className="text-sm uppercase tracking-widest text-inherit">Новое здание</span>
-          </div>
+          <BuildingCard 
+            title={BUILDING_DATA.armory.title}
+            level={state.buildings.armory || 0}
+            description={BUILDING_DATA.armory.description}
+            icon={BUILDING_DATA.armory.icon}
+            upgrading={state.buildingUpgrades?.armory}
+            now={now}
+            onClick={() => setSelectedType('armory')}
+          />
+          <BuildingCard 
+            title={BUILDING_DATA.library.title}
+            level={state.buildings.library || 0}
+            description={BUILDING_DATA.library.description}
+            icon={BUILDING_DATA.library.icon}
+            upgrading={state.buildingUpgrades?.library}
+            now={now}
+            onClick={() => setSelectedType('library')}
+          />
+          <BuildingCard 
+            title={BUILDING_DATA.market.title}
+            level={state.buildings.market || 0}
+            description={BUILDING_DATA.market.description}
+            icon={BUILDING_DATA.market.icon}
+            upgrading={state.buildingUpgrades?.market}
+            now={now}
+            onClick={() => setSelectedType('market')}
+          />
+          <BuildingCard 
+            title={BUILDING_DATA.arena.title}
+            level={state.buildings.arena || 0}
+            description={BUILDING_DATA.arena.description}
+            icon={BUILDING_DATA.arena.icon}
+            upgrading={state.buildingUpgrades?.arena}
+            now={now}
+            onClick={() => setSelectedType('arena')}
+          />
         </div>
       </div>
     </div>
@@ -656,7 +741,7 @@ function BuildingCard({ title, level, description, icon, upgrading, now, onClick
   );
 }
 
-function DisciplesView({ state, onEquip, onUnequip, onChangeRank }: { state: any, onEquip: any, onUnequip: any, onChangeRank?: any }) {
+function DisciplesView({ state, onEquip, onUnequip, onChangeRank, onUsePill }: { state: any, onEquip: any, onUnequip: any, onChangeRank?: any, onUsePill?: any }) {
   const { disciples, inventory, teams, activeTeamId } = state;
   const activeTeam = teams?.find((t: any) => t.id === activeTeamId) || teams?.[0] || { members: [] };
   const team = activeTeam?.members || [];
@@ -761,9 +846,9 @@ function DisciplesView({ state, onEquip, onUnequip, onChangeRank }: { state: any
               <div className="space-y-4">
                 <h4 className="text-sm uppercase text-stone-400 tracking-widest border-b border-zinc-800 pb-2">Экипировка</h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {(['weapon', 'armor', 'accessory'] as const).map(slot => {
+                  {(['weapon', 'armor', 'talisman'] as const).map(slot => {
                      const equipped = (d.equipment || {})[slot];
-                     const slotNames = { weapon: 'Оружие', armor: 'Броня', accessory: 'Аксессуар' };
+                     const slotNames = { weapon: 'Оружие', armor: 'Броня', talisman: 'Талисман' };
                      const availableInInventory = (inventory.artifacts || []).filter((a: any) => a.type === slot);
 
                      return (
@@ -804,6 +889,51 @@ function DisciplesView({ state, onEquip, onUnequip, onChangeRank }: { state: any
                        </div>
                      );
                   })}
+                </div>
+              </div>
+
+              {/* PILLS SECTION */}
+              <div className="space-y-4">
+                <h4 className="text-sm uppercase text-stone-400 tracking-widest border-b border-zinc-800 pb-2">Усиление пилюлями</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex-1 border border-zinc-800/50 bg-zinc-950/50 p-4">
+                    <div className="flex justify-between items-center text-xs mb-2">
+                        <span className="text-stone-300 font-mono text-[10px] uppercase">Восстановление</span>
+                        <span className="text-emerald-400 font-mono text-[10px]">В наличии: {inventory.recoveryPills || 0}</span>
+                    </div>
+                    <div className="text-[10px] text-zinc-500 mb-3">Восстанавливает здоровье ученика после боя (+50 HP).</div>
+                    <button
+                        onClick={() => onUsePill && onUsePill(d.id, 'recoveryPills')}
+                        disabled={(inventory.recoveryPills || 0) <= 0 || (d.health || 0) >= 100}
+                        className="w-full py-2 border border-emerald-500/30 text-[10px] uppercase font-bold text-emerald-400 hover:bg-emerald-500/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                        Применить
+                    </button>
+                    {d.health !== undefined && (
+                        <div className="mt-2 text-center text-[10px] text-stone-400">
+                          Здоровье: {Math.floor(d.health)} / 100
+                        </div>
+                    )}
+                  </div>
+                  <div className="flex-1 border border-zinc-800/50 bg-zinc-950/50 p-4">
+                    <div className="flex justify-between items-center text-xs mb-2">
+                        <span className="text-stone-300 font-mono text-[10px] uppercase">Усиление</span>
+                        <span className="text-amber-400 font-mono text-[10px]">В наличии: {inventory.strengthPills || 0}</span>
+                    </div>
+                    <div className="text-[10px] text-zinc-500 mb-3">Временно увеличивает БМ (+200 БМ на 10 мин).</div>
+                    <button
+                        onClick={() => onUsePill && onUsePill(d.id, 'strengthPills')}
+                        disabled={(inventory.strengthPills || 0) <= 0 || (d.buffs?.strengthUntil && d.buffs.strengthUntil > Date.now())}
+                        className="w-full py-2 border border-amber-500/30 text-[10px] uppercase font-bold text-amber-400 hover:bg-amber-500/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                        Применить
+                    </button>
+                    {d.buffs?.strengthUntil && d.buffs.strengthUntil > Date.now() && (
+                        <div className="mt-2 text-center text-[10px] text-amber-400 animate-pulse">
+                          Активно
+                        </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -1167,17 +1297,14 @@ function GachaView({ state, onAdd }: { state: any, onAdd: any }) {
 function AlchemyView({ state, onCraftPill, onInstantCraftPill, onCraftArtifact, onInstantCraftArtifact }: { state: any, onCraftPill: any, onInstantCraftPill: any, onCraftArtifact: any, onInstantCraftArtifact: any }) {
   const { inventory, buildings, resources, alchemyTask, craftingTask } = state;
   const [now, setNow] = useState(Date.now());
+  const [tab, setTab] = useState<'alchemy' | 'armory'>('alchemy');
 
   useEffect(() => {
     const interval = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(interval);
   }, []);
 
-  const canCraftPill = buildings.alchemyLab > 0 && resources.herbs >= 100 && resources.qi >= 50 && !alchemyTask;
-  const canCraftArtifact = buildings.alchemyLab > 0 && resources.ore >= 200 && resources.stones >= 500 && !craftingTask;
-
-  const handleCraftArtifact = () => {
-    const types = ['weapon', 'armor', 'accessory'] as const;
+  const handleCraftArtifact = (type: 'weapon'|'armor'|'talisman', cost: Record<string, number>) => {
     const rarities = ['Обычный', 'Редкий', 'Эпический', 'Легендарный'] as const;
     
     let r = Math.random();
@@ -1188,13 +1315,10 @@ function AlchemyView({ state, onCraftPill, onInstantCraftPill, onCraftArtifact, 
     else if (r > 0.80) { rarity = 'Эпический'; powerBonus = 100; }
     else if (r > 0.50) { rarity = 'Редкий'; powerBonus = 50; }
 
-    const tIndex = Math.floor(Math.random() * types.length);
-    const type = types[tIndex];
-
     const names = {
       'weapon': ['Меч', 'Копье', 'Кинжал', 'Посох', 'Кнут'],
       'armor': ['Одеяние', 'Доспех', 'Мантия', 'Кираса', 'Щит'],
-      'accessory': ['Кольцо', 'Амулет', 'Подвеска', 'Нефрит', 'Браслет'],
+      'talisman': ['Печать', 'Талисман', 'Амулет', 'Подвеска', 'Символ'],
     };
     const adjectives = ['Небесного Разрушения', 'Пылающего Лотоса', 'Ледяного Сердца', 'Глубокой Бездны', 'Сияющего Рассвета'];
 
@@ -1208,182 +1332,221 @@ function AlchemyView({ state, onCraftPill, onInstantCraftPill, onCraftArtifact, 
       powerBonus: Math.floor(powerBonus * (0.8 + Math.random() * 0.4)),
     };
 
-    const durationSeconds = 300 - buildings.alchemyLab * 10;
-    onCraftArtifact(artifact, 200, 500, Math.max(10, durationSeconds));
+    const durationSeconds = 300 - (buildings.armory || 0) * 10;
+    onCraftArtifact(artifact, cost, Math.max(10, durationSeconds));
   };
   
-  const handleCraftPill = () => {
+  const handleCraftPill = (type: 'recoveryPills' | 'breakthroughPills' | 'strengthPills', cost: Record<string, number>) => {
     const durationSeconds = 120 - buildings.alchemyLab * 5;
-    onCraftPill(100, 50, Math.max(5, durationSeconds));
-  }
+    onCraftPill(type, cost, Math.max(5, durationSeconds));
+  };
 
-  // Pill Task Formatting
-  let pillRemainStr = '';
-  let pillExpectedQi = 0;
-  if (alchemyTask) {
-    const remainMs = Math.max(0, alchemyTask.finishAt - now);
+  // Task Formatting
+  const getTaskInfo = (task: any) => {
+    if (!task) return null;
+    const remainMs = Math.max(0, task.finishAt - now);
     const remainSec = Math.ceil(remainMs / 1000);
     const m = Math.floor(remainSec / 60);
     const s = remainSec % 60;
-    pillRemainStr = `${m}:${s.toString().padStart(2, '0')}`;
-    pillExpectedQi = remainSec * 10;
-  }
-  const canInstantPill = pillExpectedQi > 0 && resources.qi >= pillExpectedQi;
+    return { str: `${m}:${s.toString().padStart(2, '0')}`, expectedQi: remainSec * 10 };
+  };
 
-  // Artifact Task Formatting
-  let artRemainStr = '';
-  let artExpectedQi = 0;
-  if (craftingTask) {
-    const remainMs = Math.max(0, craftingTask.finishAt - now);
-    const remainSec = Math.ceil(remainMs / 1000);
-    const m = Math.floor(remainSec / 60);
-    const s = remainSec % 60;
-    artRemainStr = `${m}:${s.toString().padStart(2, '0')}`;
-    artExpectedQi = remainSec * 10;
-  }
-  const canInstantArt = artExpectedQi > 0 && resources.qi >= artExpectedQi;
+  const pillTask = getTaskInfo(alchemyTask);
+  const canInstantPill = pillTask && resources.qi >= pillTask.expectedQi;
+
+  const artTask = getTaskInfo(craftingTask);
+  const canInstantArt = artTask && resources.qi >= artTask.expectedQi;
+
+  const PILLS = [
+    { id: 'recoveryPills', name: 'Пилюля Восстановления', desc: 'Восстановление здоровья учеников после боя.', cost: { herbs: 50, qi: 20 }, icon: <FlaskConical className="text-emerald-400" size={20} /> },
+    { id: 'breakthroughPills', name: 'Пилюля Прорыва', desc: 'Повышение шанса успешного прорыва культивации.', cost: { herbs: 150, qi: 50 }, icon: <FlaskConical className="text-purple-400" size={20} /> },
+    { id: 'strengthPills', name: 'Пилюля Силы', desc: 'Временный буст характеристик ученика.', cost: { herbs: 100, beastMaterials: 20 }, icon: <FlaskConical className="text-amber-400" size={20} /> }
+  ] as const;
+
+  const ARTIFACTS = [
+    { id: 'weapon', name: 'Оружие', desc: 'Увеличение атаки ученика.', cost: { ore: 100, qi: 30 }, icon: <Swords className="text-red-400" size={20} /> },
+    { id: 'armor', name: 'Броня', desc: 'Увеличение защиты ученика.', cost: { ore: 100, beastMaterials: 30 }, icon: <Shield className="text-sky-400" size={20} /> },
+    { id: 'talisman', name: 'Талисман', desc: 'Одноразовый предмет для боя (защита/атака).', cost: { qi: 50, beastMaterials: 50 }, icon: <Scroll className="text-amber-200" size={20} /> }
+  ] as const;
+
+  const renderCost = (cost: Record<string, number>) => {
+    const symbols: any = { herbs: '🌿', qi: '⚡', ore: '⛏', stones: '֏', beastMaterials: '🦴' };
+    return (
+      <div className="flex flex-wrap gap-4 mb-4">
+        {Object.entries(cost).map(([k, v]) => {
+          const hasEnough = (resources[k as keyof typeof resources] || 0) >= v;
+          return (
+            <div key={k} className="text-center">
+              <div className="text-[10px] text-zinc-500 uppercase">{k}</div>
+              <div className={`text-sm font-mono flex items-center gap-1 ${hasEnough ? 'text-stone-300' : 'text-red-400'}`}>
+                {v} <span className="opacity-50 text-[10px]">{symbols[k] || ''}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      <div>
-        <h2 className="text-2xl font-light text-stone-100 mb-2">Алхимия и Крафт</h2>
-        <p className="text-stone-500 text-sm">Производите пилюли и артефакты для усиления секты.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-light text-stone-100 mb-2">Производственная цепочка</h2>
+          <p className="text-stone-500 text-sm">Переработка сырья в готовые продукты.</p>
+        </div>
+        <div className="flex gap-2">
+            <button 
+                onClick={() => setTab('alchemy')}
+                className={`px-4 py-2 border text-xs uppercase font-bold tracking-widest transition-colors ${tab === 'alchemy' ? 'border-purple-500/50 bg-purple-500/10 text-purple-400' : 'border-zinc-800 text-stone-500 hover:text-stone-300 hover:bg-zinc-900'}`}
+            >Алхимия</button>
+            <button 
+                onClick={() => setTab('armory')}
+                className={`px-4 py-2 border text-xs uppercase font-bold tracking-widest transition-colors ${tab === 'armory' ? 'border-amber-500/50 bg-amber-500/10 text-amber-400' : 'border-zinc-800 text-stone-500 hover:text-stone-300 hover:bg-zinc-900'}`}
+            >Оружейная</button>
+        </div>
       </div>
 
-      {buildings.alchemyLab === 0 ? (
-        <div className="p-8 bg-zinc-900 border border-zinc-800 rounded-sm text-center">
-          <FlaskConical size={32} className="mx-auto text-zinc-700 mb-4" />
-          <h3 className="text-lg text-stone-300 mb-2">Лаборатория не построена</h3>
-          <p className="text-stone-500 text-sm">Постройте Алхимическую лабораторию на вкладке Территория.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="p-6 bg-zinc-900 border border-zinc-800 rounded-sm">
-            <h3 className="text-lg font-light text-stone-100 mb-4 flex items-center gap-2">
-              <FlaskConical className="text-purple-400" size={20} />
-              Пилюля Прорыва
-            </h3>
-            <p className="text-sm text-stone-400 mb-6">Необходима для перехода ученика на следующую стадию культивации.</p>
-            
-            <div className="flex justify-between items-center bg-zinc-950 p-4 border border-zinc-800 mb-6">
-              <div className="flex gap-4">
-                <div className="text-center">
-                  <div className="text-[10px] text-zinc-500 uppercase">Травы</div>
-                  <div className={`text-sm font-mono ${resources.herbs >= 100 ? 'text-sky-300' : 'text-red-400'}`}>100</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-[10px] text-zinc-500 uppercase">Ци</div>
-                  <div className={`text-sm font-mono ${resources.qi >= 50 ? 'text-purple-300' : 'text-red-400'}`}>50</div>
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-[10px] text-zinc-500 uppercase">В наличии</div>
-                <div className="text-lg font-mono text-amber-400">{inventory.breakthroughPills}</div>
-              </div>
-            </div>
-
-            <div className="flex gap-2">
-              {alchemyTask ? (
-                <>
-                  <div className="flex-1 px-4 py-2 border border-sky-500/30 text-sky-400 bg-sky-500/10 text-xs font-mono font-bold tracking-widest flex justify-center items-center gap-2">
-                    <span className="text-[10px] uppercase text-sky-500/70">СИНТЕЗ</span>
-                    {pillRemainStr}
-                  </div>
-                  <motion.button 
-                    whileHover={canInstantPill ? { scale: 1.02 } : {}}
-                    whileTap={canInstantPill ? { scale: 0.98 } : {}}
-                    onClick={() => onInstantCraftPill()}
-                    disabled={!canInstantPill}
-                    className={`flex-1 py-2 border text-[10px] uppercase font-bold tracking-widest transition-colors flex justify-center items-center gap-2 ${
-                      canInstantPill 
-                        ? 'border-purple-500/30 text-purple-400 hover:bg-purple-500/10' 
-                        : 'border-zinc-800 text-stone-600 cursor-not-allowed'
-                    }`}
-                  >
-                    <Zap size={12} /> {pillExpectedQi} Ци
-                  </motion.button>
-                </>
-              ) : (
-                <motion.button 
-                  whileHover={canCraftPill ? { scale: 1.02 } : {}}
-                  whileTap={canCraftPill ? { scale: 0.98 } : {}}
-                  onClick={handleCraftPill}
-                  disabled={!canCraftPill}
-                  className={`w-full py-2 border text-[10px] uppercase font-bold tracking-widest transition-colors ${
-                    canCraftPill 
-                      ? 'border-purple-500/30 text-purple-400 hover:bg-purple-500/10' 
-                      : 'border-zinc-800 text-stone-600 cursor-not-allowed'
-                  }`}
-                >
-                  Начать Синтез
-                </motion.button>
-              )}
-            </div>
+      {tab === 'alchemy' && (
+        buildings.alchemyLab === 0 ? (
+          <div className="p-8 bg-zinc-900 border border-zinc-800 rounded-sm text-center">
+            <FlaskConical size={32} className="mx-auto text-zinc-700 mb-4" />
+            <h3 className="text-lg text-stone-300 mb-2">Алхимическая лаборатория не построена</h3>
+            <p className="text-stone-500 text-sm">Постройте Лабораторию на вкладке Территория.</p>
           </div>
-
-          <div className="p-6 bg-zinc-900 border border-zinc-800 rounded-sm">
-            <h3 className="text-lg font-light text-stone-100 mb-4 flex items-center gap-2">
-              <Swords className="text-amber-400" size={20} />
-              Ковка Артефакта
-            </h3>
-            <p className="text-sm text-stone-400 mb-6">Создайте случайное снаряжение (оружие, броню или аксессуар).</p>
-            
-            <div className="flex justify-between items-center bg-zinc-950 p-4 border border-zinc-800 mb-6">
-              <div className="flex gap-4">
-                <div className="text-center">
-                  <div className="text-[10px] text-zinc-500 uppercase">Руда</div>
-                  <div className={`text-sm font-mono ${resources.ore >= 200 ? 'text-stone-300' : 'text-red-400'}`}>200</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-[10px] text-zinc-500 uppercase">Камни</div>
-                  <div className={`text-sm font-mono ${resources.stones >= 500 ? 'text-stone-300' : 'text-red-400'}`}>500</div>
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-[10px] text-zinc-500 uppercase">В наличии</div>
-                <div className="text-lg font-mono text-amber-400">{(inventory.artifacts || []).length}</div>
-              </div>
-            </div>
-
-            <div className="flex gap-2">
-              {craftingTask ? (
-                <>
-                  <div className="flex-1 px-4 py-2 border border-sky-500/30 text-sky-400 bg-sky-500/10 text-xs font-mono font-bold tracking-widest flex justify-center items-center gap-2">
-                    <span className="text-[10px] uppercase text-sky-500/70">КОВКА</span>
-                    {artRemainStr}
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {PILLS.map(p => {
+              const canCraft = Object.entries(p.cost).every(([k, v]) => (resources[k as keyof typeof resources] || 0) >= v) && !alchemyTask;
+              const isCraftingThis = alchemyTask?.type === p.id;
+              
+              return (
+                <div key={p.id} className="p-6 bg-zinc-900 border border-zinc-800 rounded-sm flex flex-col justify-between">
+                  <div>
+                    <h3 className="text-lg font-light text-stone-100 mb-4 flex items-center gap-2">
+                        {p.icon} {p.name}
+                    </h3>
+                    <p className="text-sm text-stone-400 mb-6">{p.desc}</p>
+                    <div className="flex items-center justify-between bg-zinc-950 p-4 border border-zinc-800 mb-6">
+                        {renderCost(p.cost)}
+                        <div className="text-center">
+                          <div className="text-[10px] text-zinc-500 uppercase">Склад</div>
+                          <div className="text-lg font-mono text-emerald-400">{inventory[p.id as keyof typeof inventory] || 0}</div>
+                        </div>
+                    </div>
                   </div>
-                  <motion.button 
-                    whileHover={canInstantArt ? { scale: 1.02 } : {}}
-                    whileTap={canInstantArt ? { scale: 0.98 } : {}}
-                    onClick={() => onInstantCraftArtifact()}
-                    disabled={!canInstantArt}
-                    className={`flex-1 py-2 border text-[10px] uppercase font-bold tracking-widest transition-colors flex justify-center items-center gap-2 ${
-                      canInstantArt 
-                        ? 'border-purple-500/30 text-purple-400 hover:bg-purple-500/10' 
-                        : 'border-zinc-800 text-stone-600 cursor-not-allowed'
-                    }`}
-                  >
-                    <Zap size={12} /> {artExpectedQi} Ци
-                  </motion.button>
-                </>
-              ) : (
-                <motion.button 
-                  whileHover={canCraftArtifact ? { scale: 1.02 } : {}}
-                  whileTap={canCraftArtifact ? { scale: 0.98 } : {}}
-                  onClick={handleCraftArtifact}
-                  disabled={!canCraftArtifact}
-                  className={`w-full py-2 border text-[10px] uppercase font-bold tracking-widest transition-colors ${
-                    canCraftArtifact 
-                      ? 'border-amber-500/30 text-amber-400 hover:bg-amber-500/10' 
-                      : 'border-zinc-800 text-stone-600 cursor-not-allowed'
-                  }`}
-                >
-                  Начать Ковку
-                </motion.button>
-              )}
-            </div>
+
+                  <div className="flex gap-2 min-h-[38px]">
+                    {isCraftingThis ? (
+                      <>
+                        <div className="flex-1 px-4 py-2 border border-sky-500/30 text-sky-400 bg-sky-500/10 text-xs font-mono font-bold tracking-widest flex justify-center items-center gap-2">
+                          <span className="text-[10px] uppercase text-sky-500/70">СИНТЕЗ</span>
+                          {pillTask!.str}
+                        </div>
+                        <motion.button 
+                          whileHover={canInstantPill ? { scale: 1.02 } : {}}
+                          whileTap={canInstantPill ? { scale: 0.98 } : {}}
+                          onClick={() => onInstantCraftPill()}
+                          disabled={!canInstantPill}
+                          className={`flex-1 py-2 border text-[10px] uppercase font-bold tracking-widest transition-colors flex justify-center items-center gap-2 ${
+                            canInstantPill ? 'border-purple-500/30 text-purple-400 hover:bg-purple-500/10' : 'border-zinc-800 text-stone-600 cursor-not-allowed'
+                          }`}
+                        >
+                          <Zap size={12} /> {pillTask!.expectedQi} Ци
+                        </motion.button>
+                      </>
+                    ) : (
+                      <motion.button 
+                        whileHover={canCraft ? { scale: 1.02 } : {}}
+                        whileTap={canCraft ? { scale: 0.98 } : {}}
+                        onClick={() => handleCraftPill(p.id as any, p.cost)}
+                        disabled={!canCraft || !!alchemyTask}
+                        className={`w-full py-2 border text-[10px] uppercase font-bold tracking-widest transition-colors ${
+                          canCraft 
+                            ? 'border-purple-500/30 text-purple-400 hover:bg-purple-500/10' 
+                            : 'border-zinc-800 text-stone-600 cursor-not-allowed'
+                        }`}
+                      >
+                        Начать Синтез
+                      </motion.button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        </div>
+        )
+      )}
+
+      {tab === 'armory' && (
+        (buildings.armory || 0) === 0 ? (
+          <div className="p-8 bg-zinc-900 border border-zinc-800 rounded-sm text-center">
+            <Swords size={32} className="mx-auto text-zinc-700 mb-4" />
+            <h3 className="text-lg text-stone-300 mb-2">Оружейная не построена</h3>
+            <p className="text-stone-500 text-sm">Постройте Оружейную на вкладке Территория для ковки снаряжения.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {ARTIFACTS.map(a => {
+              const canCraft = Object.entries(a.cost).every(([k, v]) => (resources[k as keyof typeof resources] || 0) >= v) && !craftingTask;
+              const isCraftingThis = craftingTask?.artifact.type === a.id;
+              
+              return (
+                <div key={a.id} className="p-6 bg-zinc-900 border border-zinc-800 rounded-sm flex flex-col justify-between">
+                  <div>
+                    <h3 className="text-lg font-light text-stone-100 mb-4 flex items-center gap-2">
+                        {a.icon} {a.name}
+                    </h3>
+                    <p className="text-sm text-stone-400 mb-6">{a.desc}</p>
+                    <div className="flex items-center justify-between bg-zinc-950 p-4 border border-zinc-800 mb-6">
+                        {renderCost(a.cost)}
+                        <div className="text-center">
+                          <div className="text-[10px] text-zinc-500 uppercase">Склад</div>
+                          <div className="text-lg font-mono text-amber-400">{(inventory.artifacts || []).filter((art: any) => art.type === a.id).length}</div>
+                        </div>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 min-h-[38px]">
+                    {isCraftingThis ? (
+                      <>
+                        <div className="flex-1 px-4 py-2 border border-sky-500/30 text-sky-400 bg-sky-500/10 text-xs font-mono font-bold tracking-widest flex justify-center items-center gap-2">
+                          <span className="text-[10px] uppercase text-sky-500/70">КОВКА</span>
+                          {artTask!.str}
+                        </div>
+                        <motion.button 
+                          whileHover={canInstantArt ? { scale: 1.02 } : {}}
+                          whileTap={canInstantArt ? { scale: 0.98 } : {}}
+                          onClick={() => onInstantCraftArtifact()}
+                          disabled={!canInstantArt}
+                          className={`flex-1 py-2 border text-[10px] uppercase font-bold tracking-widest transition-colors flex justify-center items-center gap-2 ${
+                            canInstantArt ? 'border-amber-500/30 text-amber-400 hover:bg-amber-500/10' : 'border-zinc-800 text-stone-600 cursor-not-allowed'
+                          }`}
+                        >
+                          <Zap size={12} /> {artTask!.expectedQi} Ци
+                        </motion.button>
+                      </>
+                    ) : (
+                      <motion.button 
+                        whileHover={canCraft ? { scale: 1.02 } : {}}
+                        whileTap={canCraft ? { scale: 0.98 } : {}}
+                        onClick={() => handleCraftArtifact(a.id as any, a.cost)}
+                        disabled={!canCraft || !!craftingTask}
+                        className={`w-full py-2 border text-[10px] uppercase font-bold tracking-widest transition-colors ${
+                          canCraft 
+                            ? 'border-amber-500/30 text-amber-400 hover:bg-amber-500/10' 
+                            : 'border-zinc-800 text-stone-600 cursor-not-allowed'
+                        }`}
+                      >
+                        Начать Ковку
+                      </motion.button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )
       )}
     </div>
   );
