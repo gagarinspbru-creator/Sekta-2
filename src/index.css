@@ -1,0 +1,41 @@
+@import url('https://fonts.googleapis.com/css2?family=El+Messiri:wght@400;500;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "El Messiri", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "El Messiri", ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  --color-wuxia-gold: #fbbf24;
+  --color-wuxia-blue: #bae6fd;
+  --color-wuxia-lilac: #e9d5ff;
+}
+
+body {
+  @apply bg-zinc-950 text-stone-300 font-serif;
+}
+
+/* Custom Elegant Scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(24, 24, 27, 0.4); /* subtle zinc-900 */
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #27272a; /* zinc-800 */
+  border-radius: 10px;
+  transition: background 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #52525b; /* zinc-600 */
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #27272a transparent;
+}
