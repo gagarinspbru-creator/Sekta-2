@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Pickaxe, Scroll, Users, Home, Settings, Zap, Gem, Award, FlaskConical, Swords, Leaf, Sparkles, Shield, Flame, Skull, Crosshair, Droplets, Mountain, LayoutGrid, List, Pickaxe as MiningIcon, ChevronDown } from 'lucide-react';
+import { Pickaxe, Scroll, Users, Home, Settings, Zap, Gem, Award, FlaskConical, Swords, Leaf, Sparkles, Shield, Flame, Skull, Crosshair, Droplets, Mountain, LayoutGrid, List, Pickaxe as MiningIcon, ChevronDown, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useGameState } from './hooks/useGameState';
 import { CULTIVATION_STAGES } from './types';
@@ -20,7 +20,7 @@ export const getDiscipleRank = (d: any) => d.rank || (d.type === 'inner' || (!d.
 export const isInnerDisciple = (d: any) => ['Глава секты', 'Старейшина', 'Элита', 'Внутренний ученик', 'Новобранец'].includes(getDiscipleRank(d));
 
 export default function App() {
-  const { state, upgradeBuilding, instantUpgradeBuilding, addDisciple, changeDiscipleRank, craftPill, instantCraftPill, craftArtifact, instantCraftArtifact, equipArtifact, unequipArtifact, usePill, promoteDisciple, instantPromoteDisciple, clearSave, addCheats, claimArenaReward, updateTactics, updateTeams, claimResources } = useGameState();
+  const { state, upgradeBuilding, instantUpgradeBuilding, addDisciple, changeDiscipleRank, craftPill, instantCraftPill, craftArtifact, instantCraftArtifact, equipArtifact, unequipArtifact, usePill, promoteDisciple, instantPromoteDisciple, trainDisciple, instantTrainDisciple, clearSave, addCheats, claimArenaReward, updateTactics, updateTeams, claimResources } = useGameState();
   const [currentView, setCurrentView] = useState<'overview' | 'buildings' | 'disciples' | 'gacha' | 'alchemy' | 'cultivation' | 'arena' | 'teams' | 'tactics'>('overview');
 
   const { resources } = state;
@@ -134,7 +134,7 @@ export default function App() {
             {currentView === 'disciples' && <DisciplesView state={state} onEquip={equipArtifact} onUnequip={unequipArtifact} onChangeRank={changeDiscipleRank} onUsePill={usePill} />}
             {currentView === 'gacha' && <GachaView state={state} onAdd={addDisciple} />}
             {currentView === 'alchemy' && <AlchemyView state={state} onCraftPill={craftPill} onInstantCraftPill={instantCraftPill} onCraftArtifact={craftArtifact} onInstantCraftArtifact={instantCraftArtifact} />}
-            {currentView === 'cultivation' && <CultivationView state={state} onPromote={promoteDisciple} onInstantPromote={instantPromoteDisciple} />}
+            {currentView === 'cultivation' && <CultivationView state={state} onPromote={promoteDisciple} onInstantPromote={instantPromoteDisciple} onTrain={trainDisciple} onInstantTrain={instantTrainDisciple} />}
             {currentView === 'teams' && <TacticsView state={state} onUpdate={updateTactics} onUpdateTeams={updateTeams} initialTab="teams" />}
             {currentView === 'tactics' && <TacticsView state={state} onUpdate={updateTactics} onUpdateTeams={updateTeams} initialTab="tactics" />}
             {currentView === 'arena' && <ArenaView state={state} onReward={claimArenaReward} />}
@@ -329,6 +329,47 @@ function OverviewView({ state }: { state: any }) {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="p-6 bg-zinc-900 border border-zinc-800 rounded-sm">
+          <h3 className="text-sm uppercase text-amber-500 mb-4 tracking-widest flex items-center gap-2">
+            <User size={14} />
+            Профиль Главы
+          </h3>
+          {state.player && (
+            <div className="space-y-4">
+              <div className="flex justify-between items-center border-b border-zinc-800/50 pb-2">
+                <div className="text-stone-300 text-sm">Уровень / Опыт</div>
+                <div className="text-stone-400 text-xs font-mono">{state.player.level} <span className="opacity-50">/ {state.player.exp} xp</span></div>
+              </div>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2 pt-2">
+                <div className="flex justify-between items-center">
+                  <div className="text-stone-500 text-[10px] uppercase tracking-widest">Авторитет</div>
+                  <div className="text-amber-400 text-xs font-mono">{state.player.stats.authority}</div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <div className="text-stone-500 text-[10px] uppercase tracking-widest">Харизма</div>
+                  <div className="text-purple-400 text-xs font-mono">{state.player.stats.charisma}</div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <div className="text-stone-500 text-[10px] uppercase tracking-widest">Стратегия</div>
+                  <div className="text-sky-400 text-xs font-mono">{state.player.stats.strategy}</div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <div className="text-stone-500 text-[10px] uppercase tracking-widest">Мудрость</div>
+                  <div className="text-emerald-400 text-xs font-mono">{state.player.stats.wisdom}</div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <div className="text-stone-500 text-[10px] uppercase tracking-widest">Хитрость</div>
+                  <div className="text-rose-400 text-xs font-mono">{state.player.stats.cunning}</div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <div className="text-stone-500 text-[10px] uppercase tracking-widest">Удача</div>
+                  <div className="text-stone-300 text-xs font-mono">{state.player.stats.luck}</div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
         <div className="p-6 bg-zinc-900 border border-zinc-800 rounded-sm">
           <h3 className="text-sm uppercase text-stone-400 mb-4 tracking-widest flex items-center gap-2">
             <Swords size={14} className="text-sky-400" />
@@ -833,6 +874,20 @@ function DisciplesView({ state, onEquip, onUnequip, onChangeRank, onUsePill }: {
                    <span className="text-amber-500">[{CULTIVATION_STAGES[d.cultivationStage]}]</span>
                    <span className="text-stone-300 font-mono bg-zinc-950 px-2 py-1 border border-zinc-800">Ур. {d.level || 1}</span>
                  </div>
+                 <div className="flex items-center gap-4 text-sm text-stone-400 mt-2">
+                   <div className="flex flex-col gap-1 text-xs">
+                     <span className="text-[10px] text-zinc-500 uppercase tracking-widest">Лояльность: <span className="text-stone-300 font-mono">{Math.floor(d.loyalty || 0)}/100</span></span>
+                     <div className="w-32 bg-zinc-900 h-1 rounded-full overflow-hidden">
+                       <div className="h-full bg-blue-500" style={{ width: `${Math.floor(d.loyalty || 0)}%` }}></div>
+                     </div>
+                   </div>
+                   <div className="flex flex-col gap-1 text-xs">
+                     <span className="text-[10px] text-zinc-500 uppercase tracking-widest">Мораль: <span className="text-stone-300 font-mono">{Math.floor(d.morale ?? 100)}/100</span></span>
+                     <div className="w-32 bg-zinc-900 h-1 rounded-full overflow-hidden">
+                       <div className="h-full bg-emerald-500" style={{ width: `${Math.floor(d.morale ?? 100)}%` }}></div>
+                     </div>
+                   </div>
+                 </div>
               </div>
 
               <div className="p-4 bg-zinc-950 border border-zinc-800 rounded-sm">
@@ -841,6 +896,40 @@ function DisciplesView({ state, onEquip, onUnequip, onChangeRank, onUsePill }: {
                 <div className="w-full bg-zinc-900 h-1 mt-2 rounded-full overflow-hidden">
                   <div className={`h-full ${tagClass.bg}`} style={{ width: `${(d.power / 500) * 100}%` }}></div>
                 </div>
+
+                {d.combatStats && (
+                  <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+                    <div className="flex justify-between border-b border-zinc-800/50 pb-1">
+                      <span className="text-stone-500">Атака:</span><span className="text-stone-300 font-mono">{d.combatStats.attack}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-zinc-800/50 pb-1">
+                      <span className="text-stone-500">Защита:</span><span className="text-stone-300 font-mono">{d.combatStats.defense}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-zinc-800/50 pb-1">
+                      <span className="text-stone-500">Здоровье:</span><span className="text-emerald-400 font-mono">{d.combatStats.health}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-zinc-800/50 pb-1">
+                      <span className="text-stone-500">Скорость:</span><span className="text-sky-300 font-mono">{d.combatStats.speed}</span>
+                    </div>
+                  </div>
+                )}
+                
+                {d.workStats && (
+                  <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+                    <div className="flex justify-between border-b border-zinc-800/50 pb-1">
+                      <span className="text-stone-500">Добыча (шахта):</span><span className="text-amber-400 font-mono">{d.workStats.mining}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-zinc-800/50 pb-1">
+                      <span className="text-stone-500">Сбор (сады):</span><span className="text-green-400 font-mono">{d.workStats.farming}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-zinc-800/50 pb-1">
+                      <span className="text-stone-500">Алхимия:</span><span className="text-purple-400 font-mono">{d.workStats.alchemy}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-zinc-800/50 pb-1">
+                      <span className="text-stone-500">Крафт:</span><span className="text-zinc-300 font-mono">{d.workStats.crafting}</span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-4">
@@ -1101,19 +1190,24 @@ function DisciplesView({ state, onEquip, onUnequip, onChangeRank, onUsePill }: {
 }
 
 function GachaView({ state, onAdd }: { state: any, onAdd: any }) {
-  const INNER_COST = 1000;
-  const OUTER_COST = 200;
+  const discount = state.player ? state.player.stats.cunning * 0.005 : 0;
+  const INNER_COST = Math.floor(1000 * (1 - discount));
+  const OUTER_COST = Math.floor(200 * (1 - discount));
 
   const [isSummoning, setIsSummoning] = useState(false);
   const [summonResult, setSummonResult] = useState<any>(null);
   const [lastSummonType, setLastSummonType] = useState<'inner' | 'outer'>('inner');
 
-  const canSummonInner = state.resources.stones >= INNER_COST;
+  const maxInner = state.player ? 5 + Math.floor(state.player.stats.authority / 10) : 5;
+  const innerCount = state.disciples.filter((d: any) => d.type === 'inner' || ['Эпический', 'Легендарный', 'Мифический'].includes(d.rarity)).length;
+  
+  const canSummonInner = state.resources.stones >= INNER_COST && innerCount < maxInner;
   const canSummonOuter = state.resources.stones >= OUTER_COST;
 
   const handleSummon = (type: 'inner' | 'outer') => {
     const cost = type === 'inner' ? INNER_COST : OUTER_COST;
     if (state.resources.stones < cost || isSummoning) return;
+    if (type === 'inner' && innerCount >= maxInner) return;
     
     setIsSummoning(true);
     setSummonResult(null);
@@ -1123,7 +1217,9 @@ function GachaView({ state, onAdd }: { state: any, onAdd: any }) {
     setTimeout(() => {
       const roles = ['Воин', 'Маг', 'Атакующий', 'Танк', 'Поддержка', 'Ассасин'];
       const elements = ['Огонь', 'Вода', 'Дерево', 'Металл', 'Земля'];
-      const r = Math.random();
+      const charismaBonus = state.player ? state.player.stats.charisma * 0.005 : 0;
+      const r = Math.min(1, Math.random() + charismaBonus); // Харизма повышает шанс редких
+      
       let rarity = 'Обычный';
       let powerBase = 50;
       
@@ -1140,18 +1236,60 @@ function GachaView({ state, onAdd }: { state: any, onAdd: any }) {
       const firstNames = ['Лин', 'Фэн', 'Юнь', 'Шэнь', 'Чен', 'Вэй', 'Сюэ', 'Бай', 'Хань', 'Мо', 'Жуй', 'Тянь', 'Ин', 'Цзянь', 'Лун', 'Ян', 'Мин', 'Ши'];
       const lastNames = ['Фан', 'Сяо', 'Ли', 'Ван', 'Чжан', 'Лю', 'Е', 'Цзинь', 'Сюй', 'Чжао', 'Сун', 'Цю', 'Му', 'Лан', 'Гу'];
 
+      const element = elements[Math.floor(Math.random() * elements.length)] as any;
+      let combatStats = { attack: 0, defense: 0, health: 0, speed: 0 };
+      let workStats = { mining: 0, farming: 0, alchemy: 0, crafting: 0 };
+
+      if (type === 'inner') {
+          combatStats = {
+              attack: powerBase + Math.floor(Math.random() * powerBase),
+              defense: powerBase + Math.floor(Math.random() * powerBase),
+              health: powerBase * 10 + Math.floor(Math.random() * powerBase * 5),
+              speed: powerBase + Math.floor(Math.random() * powerBase),
+          };
+          workStats = {
+              mining: Math.floor(powerBase * 0.1),
+              farming: Math.floor(powerBase * 0.1),
+              alchemy: Math.floor(powerBase * 0.5),
+              crafting: Math.floor(powerBase * 0.5),
+          };
+      } else {
+          workStats = {
+              mining: powerBase + Math.floor(Math.random() * powerBase),
+              farming: powerBase + Math.floor(Math.random() * powerBase),
+              alchemy: powerBase + Math.floor(Math.random() * powerBase),
+              crafting: powerBase + Math.floor(Math.random() * powerBase),
+          };
+          
+          if (element === 'Земля' || element === 'Металл') workStats.mining += powerBase;
+          if (element === 'Вода' || element === 'Дерево') workStats.farming += powerBase;
+          if (element === 'Огонь') {
+              workStats.alchemy += powerBase;
+              workStats.crafting += powerBase;
+          }
+
+          combatStats = {
+              attack: Math.floor(powerBase * 0.5),
+              defense: Math.floor(powerBase * 0.5),
+              health: Math.floor(powerBase * 5),
+              speed: Math.floor(powerBase * 0.5),
+          };
+      }
+
       const newDisciple = {
         id: Math.random().toString(36).substr(2, 9),
         name: `${lastNames[Math.floor(Math.random() * lastNames.length)]} ${firstNames[Math.floor(Math.random() * firstNames.length)]}`,
         rarity,
         role: roles[Math.floor(Math.random() * roles.length)] as any,
-        element: elements[Math.floor(Math.random() * elements.length)] as any,
+        element,
         level: 1,
         power: powerBase * 1.5,
-        loyalty: 80 + Math.floor(Math.random() * 20),
+        loyalty: Math.min(200, Math.floor((80 + Math.floor(Math.random() * 20)) * (1 + charismaBonus * 2))), // +1% per point
         cultivationStage: 0,
         type,
         rank: type === 'inner' ? 'Внутренний ученик' : 'Внешний ученик',
+        combatStats,
+        workStats,
       };
 
       onAdd(newDisciple, cost);
@@ -1268,23 +1406,28 @@ function GachaView({ state, onAdd }: { state: any, onAdd: any }) {
                   </span>
                 </motion.button>
 
-                <motion.button
-                  whileHover={canSummonInner ? { scale: 1.05, backgroundColor: "rgba(168,85,247,0.15)" } : {}}
-                  whileTap={canSummonInner ? { scale: 0.95 } : {}}
-                  onClick={() => handleSummon('inner')}
-                  disabled={!canSummonInner || isSummoning}
-                  className={`flex flex-col items-center justify-center px-8 py-4 border transition-all ${
-                    canSummonInner 
-                      ? 'border-purple-500 text-purple-300 shadow-[0_0_15px_rgba(168,85,247,0.3)] hover:shadow-[0_0_30px_rgba(168,85,247,0.5)]' 
-                      : 'border-zinc-800 text-stone-600 cursor-not-allowed'
-                  }`}
-                >
-                  <span className="text-sm font-bold uppercase tracking-widest mb-1">Призыв Таланта</span>
-                  <span className="text-[10px] opacity-70 uppercase">Внутренний ученик</span>
-                  <span className={`font-mono mt-2 px-3 py-1 bg-zinc-950 border ${canSummonInner ? 'border-purple-500 text-amber-400' : 'border-zinc-800 text-zinc-600'}`}>
-                    {INNER_COST} ֏
-                  </span>
-                </motion.button>
+                <div className="flex flex-col items-center gap-2">
+                  <motion.button
+                    whileHover={canSummonInner ? { scale: 1.05, backgroundColor: "rgba(168,85,247,0.15)" } : {}}
+                    whileTap={canSummonInner ? { scale: 0.95 } : {}}
+                    onClick={() => handleSummon('inner')}
+                    disabled={!canSummonInner || isSummoning}
+                    className={`flex flex-col items-center justify-center px-8 py-4 w-full h-full border transition-all ${
+                      canSummonInner 
+                        ? 'border-purple-500 text-purple-300 shadow-[0_0_15px_rgba(168,85,247,0.3)] hover:shadow-[0_0_30px_rgba(168,85,247,0.5)]' 
+                        : 'border-zinc-800 text-stone-600 cursor-not-allowed'
+                    }`}
+                  >
+                    <span className="text-sm font-bold uppercase tracking-widest mb-1">Призыв Таланта</span>
+                    <span className="text-[10px] opacity-70 uppercase">Внутренний ученик</span>
+                    <span className={`font-mono mt-2 px-3 py-1 bg-zinc-950 border ${canSummonInner ? 'border-purple-500 text-amber-400' : 'border-zinc-800 text-zinc-600'}`}>
+                      {INNER_COST} ֏
+                    </span>
+                  </motion.button>
+                  {innerCount >= maxInner && (
+                    <div className="text-[10px] text-red-500 uppercase tracking-widest mt-1">Достигнут лимит: {innerCount}/{maxInner}</div>
+                  )}
+                </div>
               </div>
             </motion.div>
           )}
@@ -1552,8 +1695,8 @@ function AlchemyView({ state, onCraftPill, onInstantCraftPill, onCraftArtifact, 
   );
 }
 
-function CultivationView({ state, onPromote, onInstantPromote }: { state: any, onPromote: any, onInstantPromote: any }) {
-  const { disciples, inventory, cultivatingTasks, resources } = state;
+function CultivationView({ state, onPromote, onInstantPromote, onTrain, onInstantTrain }: { state: any, onPromote: any, onInstantPromote: any, onTrain: (id: string, durationSeconds: number) => void, onInstantTrain: (id: string) => void }) {
+  const { disciples, inventory, cultivatingTasks, trainingTasks, resources } = state;
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
@@ -1561,12 +1704,30 @@ function CultivationView({ state, onPromote, onInstantPromote }: { state: any, o
     return () => clearInterval(interval);
   }, []);
 
+  const getRequirementsForNextStage = (currentStage: number) => {
+    switch (currentStage) {
+      case 0: return { level: 20, breakPills: 1, beast: 0, legendArtifact: false, text: 'Уровень 20+, 1 Пилюля прорыва', bonusText: '+50% к мощи (заменяет +20%)' };
+      case 1: return { level: 30, breakPills: 1, beast: 0, legendArtifact: false, text: 'Уровень 30+, 1 Пилюля прорыва (заменяет рецепт)', bonusText: '+100% к мощи' };
+      case 2: return { level: 40, breakPills: 0, beast: 1000, legendArtifact: false, text: 'Уровень 40+, 1000 Костей (легендарные материалы)', bonusText: '+200% к мощи' };
+      case 3: return { level: 50, breakPills: 0, beast: 0, legendArtifact: true, text: 'Уровень 50, 1 Легендарный артефакт в инвентаре', bonusText: '+400% к мощи' };
+      default: return { level: 999, breakPills: 0, beast: 0, legendArtifact: false, text: 'Максимальный уровень', bonusText: '' };
+    }
+  };
+
+  const hasRequirements = (d: any, reqs: any) => {
+    if (d.level < reqs.level) return false;
+    if (inventory.breakthroughPills < reqs.breakPills) return false;
+    if ((resources.beastMaterials || 0) < reqs.beast) return false;
+    if (reqs.legendArtifact && !(inventory.artifacts || []).some((a: any) => a.rarity === 'Легендарный')) return false;
+    return true;
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex justify-between items-end mb-6">
         <div>
           <h2 className="text-2xl font-light text-stone-100 mb-2">Зал Культивации</h2>
-          <p className="text-stone-500 text-sm">Проводите прорывы для кратного усиления боевой мощи.</p>
+          <p className="text-stone-500 text-sm">Тренируйте учеников и проводите прорывы для кратного усиления боевой мощи.</p>
         </div>
         <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 px-4 py-2">
           <FlaskConical size={16} className="text-purple-400" />
@@ -1585,7 +1746,9 @@ function CultivationView({ state, onPromote, onInstantPromote }: { state: any, o
           {disciples.map((d: any) => {
             const isMaxStage = d.cultivationStage >= 4;
             const task = cultivatingTasks?.[d.id];
-            const canPromote = !isMaxStage && inventory.breakthroughPills > 0 && !task;
+            const trainTask = trainingTasks?.[d.id];
+            const reqs = getRequirementsForNextStage(d.cultivationStage);
+            const canPromote = !isMaxStage && hasRequirements(d, reqs) && !task;
             const currentStageName = CULTIVATION_STAGES[d.cultivationStage];
             const nextStageName = isMaxStage ? 'Максимум' : CULTIVATION_STAGES[d.cultivationStage + 1];
 
@@ -1600,66 +1763,123 @@ function CultivationView({ state, onPromote, onInstantPromote }: { state: any, o
               expectedQi = remainSec * 10;
             }
             const canInstant = expectedQi > 0 && resources.qi >= expectedQi;
-            const durationSeconds = 300 * (d.cultivationStage + 1);
+            
+            let trainRemainStr = '';
+            let expectedTrainQi = 0;
+            if (trainTask) {
+              const remainMs = Math.max(0, trainTask.finishAt - now);
+              const remainSec = Math.ceil(remainMs / 1000);
+              const m = Math.floor(remainSec / 60);
+              const s = remainSec % 60;
+              trainRemainStr = `${m}:${s.toString().padStart(2, '0')}`;
+              expectedTrainQi = remainSec * 2;
+            }
+            const canInstantTrain = expectedTrainQi > 0 && resources.qi >= expectedTrainQi;
+            const canTrain = resources.qi >= 10 && !task && !trainTask;
+            const wisdomBonus = state.player ? state.player.stats.wisdom * 0.01 : 0;
+            const durationMultiplier = Math.max(0.1, 1 - wisdomBonus);
+            
+            const durationSeconds = Math.floor(300 * (d.cultivationStage + 1) * durationMultiplier);
+            const trainDurationSeconds = Math.floor(60 * (d.cultivationStage + 1) * durationMultiplier);
 
             return (
-              <div key={d.id} className="p-4 bg-zinc-900 border border-zinc-800 flex items-center justify-between group flex-wrap md:flex-nowrap gap-4">
-                <div className="flex flex-col w-full md:w-1/4">
-                  <span className="text-sm text-stone-200">{d.name}</span>
-                  <span className="text-[10px] text-zinc-500">Ур. {d.level || 1} БМ: {d.power}</span>
-                </div>
-                
-                <div className="flex-1 w-full md:w-auto flex items-center justify-center gap-4">
-                  <div className="text-right">
-                    <div className="text-[10px] text-zinc-500 uppercase">Текущая стадия</div>
-                    <div className="text-sm text-stone-300">{currentStageName}</div>
+              <div key={d.id} className="relative p-6 bg-zinc-900 border border-zinc-800 rounded-sm flex flex-col md:flex-row gap-6 md:items-start">
+                <div className="flex-1 w-full flex flex-col gap-3">
+                  <div className="flex items-center gap-3">
+                    <span className={`text-sm tracking-widest uppercase font-bold ${getRarityTag(d.rarity).text}`}>{d.name}</span>
+                    <span className="text-[10px] text-zinc-500 border border-zinc-800 px-2 py-0.5 bg-zinc-950 uppercase">{currentStageName}</span>
+                    <span className="text-[10px] text-stone-300 border border-stone-800 px-2 py-0.5 bg-zinc-950 uppercase">Ур. {d.level || 1}</span>
                   </div>
+                  <div className="text-xs text-stone-400">
+                    Мощь: <span className="text-stone-200">{d.power} БМ</span>
+                  </div>
+                  
                   {!isMaxStage && (
-                    <>
-                      <Swords size={16} className="text-amber-500 opacity-50" />
-                      <div className="text-left">
-                        <div className="text-[10px] text-purple-400/50 uppercase">Следующая стадия</div>
-                        <div className="text-sm text-purple-300">{nextStageName}</div>
+                    <div className="p-3 bg-zinc-950 border border-zinc-800 flex flex-col gap-2 mt-2">
+                      <div className="flex justify-between items-center">
+                         <span className="text-[10px] text-zinc-500 uppercase tracking-widest">Следующая стадия:</span>
+                         <span className="text-xs text-purple-400 uppercase font-mono text-right">{nextStageName}<br/><span className="text-[10px] opacity-75">{reqs.bonusText}</span></span>
                       </div>
-                    </>
+                      <div className="text-[10px] text-stone-500">
+                        <span className="uppercase mr-2">Требования:</span> {reqs.text}
+                      </div>
+                    </div>
                   )}
                 </div>
 
-                <div className="w-full md:w-auto flex justify-end gap-2">
-                  {task ? (
+                <div className="flex gap-2 flex-col min-w-[240px]">
+                  {trainTask ? (
                     <>
-                      <div className="px-4 py-2 border border-sky-500/30 text-sky-400 bg-sky-500/10 text-xs font-mono font-bold tracking-widest flex items-center gap-2">
-                        <span className="text-[10px] uppercase text-sky-500/70">ПРОРЫВ</span>
+                      <div className="px-4 py-3 border border-sky-500/30 text-sky-400 bg-sky-500/10 text-xs font-mono font-bold tracking-widest flex justify-center items-center gap-2">
+                        <span className="text-[10px] uppercase text-sky-500/70">ТРЕНИРОВКА</span>
+                        {trainRemainStr}
+                      </div>
+                      <motion.button 
+                        whileHover={canInstantTrain ? { scale: 1.02 } : {}}
+                        whileTap={canInstantTrain ? { scale: 0.98 } : {}}
+                        onClick={() => onInstantTrain(d.id)}
+                        disabled={!canInstantTrain}
+                        className={`py-3 border text-xs uppercase font-bold tracking-widest transition-colors flex justify-center items-center gap-2 ${
+                          canInstantTrain 
+                            ? 'border-sky-500/30 text-sky-400 hover:bg-sky-500/10' 
+                            : 'border-zinc-800 text-stone-600 cursor-not-allowed'
+                        }`}
+                      >
+                        <Zap size={14} /> Ускорить ({expectedTrainQi} Ци)
+                      </motion.button>
+                    </>
+                  ) : task ? (
+                    <>
+                      <div className="px-4 py-3 border border-purple-500/30 text-purple-400 bg-purple-500/10 text-xs font-mono font-bold tracking-widest flex justify-center items-center gap-2">
+                        <span className="text-[10px] uppercase text-purple-500/70">ПРОРЫВ</span>
                         {remainStr}
                       </div>
                       <motion.button 
-                        whileHover={canInstant ? { scale: 1.05 } : {}}
-                        whileTap={canInstant ? { scale: 0.95 } : {}}
+                        whileHover={canInstant ? { scale: 1.02 } : {}}
+                        whileTap={canInstant ? { scale: 0.98 } : {}}
                         onClick={() => onInstantPromote(d.id)}
                         disabled={!canInstant}
-                        className={`px-4 py-2 border text-[10px] uppercase font-bold tracking-widest transition-colors flex items-center gap-2 ${
+                        className={`py-3 border text-xs uppercase font-bold tracking-widest transition-colors flex justify-center items-center gap-2 ${
                           canInstant 
                             ? 'border-purple-500/30 text-purple-400 hover:bg-purple-500/10' 
                             : 'border-zinc-800 text-stone-600 cursor-not-allowed'
                         }`}
                       >
-                        <Zap size={12} /> {expectedQi} Ци
+                        <Zap size={14} /> Ускорить ({expectedQi} Ци)
                       </motion.button>
                     </>
                   ) : (
-                    <motion.button
-                      whileHover={canPromote ? { scale: 1.05 } : {}}
-                      whileTap={canPromote ? { scale: 0.95 } : {}}
-                      onClick={() => onPromote(d.id, durationSeconds)}
-                      disabled={!canPromote}
-                      className={`px-4 py-2 border text-[10px] uppercase font-bold tracking-widest transition-colors ${
-                        canPromote 
-                          ? 'border-amber-500/30 text-amber-400 hover:bg-amber-500/10' 
-                          : 'border-zinc-800 text-stone-600 cursor-not-allowed'
-                      }`}
-                    >
-                      {isMaxStage ? 'Достигнут предел' : 'Прорыв'}
-                    </motion.button>
+                    <>
+                      <motion.button 
+                        whileHover={canTrain ? { scale: 1.02 } : {}}
+                        whileTap={canTrain ? { scale: 0.98 } : {}}
+                        onClick={() => onTrain(d.id, trainDurationSeconds)}
+                        disabled={!canTrain}
+                        className={`px-6 py-2 border text-[10px] uppercase font-bold tracking-widest transition-colors ${
+                          canTrain 
+                            ? 'border-sky-500/30 text-sky-400 hover:bg-sky-500/10' 
+                            : 'border-zinc-800 text-stone-600 cursor-not-allowed'
+                        }`}
+                      >
+                        Тренировать (-10 Ци / +1 Уровень)
+                      </motion.button>
+
+                      {!isMaxStage && (
+                        <motion.button 
+                          whileHover={canPromote ? { scale: 1.02 } : {}}
+                          whileTap={canPromote ? { scale: 0.98 } : {}}
+                          onClick={() => onPromote(d.id, durationSeconds)}
+                          disabled={!canPromote}
+                          className={`px-6 py-3 border text-xs uppercase font-bold tracking-widest transition-colors mt-2 ${
+                            canPromote 
+                              ? 'border-purple-500/30 text-purple-400 hover:bg-purple-500/10' 
+                              : 'border-zinc-800 text-stone-600 cursor-not-allowed opacity-50'
+                          }`}
+                        >
+                          Начать Прорыв
+                        </motion.button>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
@@ -1673,7 +1893,7 @@ function CultivationView({ state, onPromote, onInstantPromote }: { state: any, o
 
 function ArenaView({ state, onReward }: { state: any, onReward: any }) {
   const { disciples, teams = [], activeTeamId } = state;
-  const activeTeam = teams?.find((t: any) => t.id === activeTeamId) || teams?.[0] || { members: [], formation: 'Круговая оборона' };
+  const activeTeam = teams?.find((t: any) => t.id === activeTeamId) || teams?.[0] || { members: [], formation: 'Триада Земли' };
   const team = activeTeam?.members || [];
   const formation = activeTeam.formation;
 
@@ -1703,7 +1923,7 @@ function ArenaView({ state, onReward }: { state: any, onReward: any }) {
         return () => clearTimeout(timer);
       } else if (!rewardClaimed) {
         setRewardClaimed(true);
-        onReward(combatData.rewards.stones, combatData.rewards.prestige, combatData.won, combatData.mode);
+        onReward(combatData.rewards.stones, combatData.rewards.prestige, combatData.won, combatData.mode, combatData.participants);
       }
     }
   }, [combatState, combatData, visibleLogCount, rewardClaimed, onReward]);
@@ -1726,12 +1946,19 @@ function ArenaView({ state, onReward }: { state: any, onReward: any }) {
 
     const newOpponents = Array.from({length: 3}).map((_, i) => {
       const name = `${parts1[Math.floor(Math.random()*parts1.length)]} ${parts2[Math.floor(Math.random()*parts2.length)]}`;
+      const power = Math.floor(player.power * (0.7 + Math.random() * 0.6));
       return {
         id: `enemy_${i}`,
         name,
-        power: Math.floor(player.power * (0.7 + Math.random() * 0.6)),
+        power,
         element: elements[Math.floor(Math.random() * elements.length)],
         role: roles[Math.floor(Math.random() * roles.length)],
+        combatStats: {
+          attack: power + Math.floor(Math.random() * power),
+          defense: power + Math.floor(Math.random() * power),
+          health: power * 10 + Math.floor(Math.random() * power * 5),
+          speed: power + Math.floor(Math.random() * power),
+        }
       };
     });
     
@@ -1756,17 +1983,20 @@ function ArenaView({ state, onReward }: { state: any, onReward: any }) {
       "бьет в уязвимую точку"
     ];
 
-    let pHP = player.power * 10;
-    let eHP = enemyDisciple.power * 10;
+    let pHP = player.combatStats ? player.combatStats.health : player.power * 10;
+    let eHP = enemyDisciple.combatStats ? enemyDisciple.combatStats.health : enemyDisciple.power * 10;
     const log = [];
     let round = 1;
 
     const pMult = elementsRules[player.element] === enemyDisciple.element ? 1.2 : 1.0;
     const eMult = elementsRules[enemyDisciple.element] === player.element ? 1.2 : 1.0;
 
+    let pAttack = player.combatStats ? player.combatStats.attack : player.power * 2;
+    let eAttack = enemyDisciple.combatStats ? enemyDisciple.combatStats.attack : enemyDisciple.power * 2;
+
     while (pHP > 0 && eHP > 0 && round <= 10) {
        const flavor1 = flavorTexts[Math.floor(Math.random() * flavorTexts.length)];
-       const pDmg = Math.floor((player.power * 2) * pMult * (0.8 + Math.random() * 0.4));
+       const pDmg = Math.floor(pAttack * pMult * (0.8 + Math.random() * 0.4));
        eHP -= pDmg;
        log.push({ round, actor: player.name, text: `${flavor1} стихии ${player.element}, нанося ${pDmg} урона`, icon: player.element });
        if (eHP <= 0) {
@@ -1775,7 +2005,7 @@ function ArenaView({ state, onReward }: { state: any, onReward: any }) {
        }
 
        const flavor2 = flavorTexts[Math.floor(Math.random() * flavorTexts.length)];
-       const eDmg = Math.floor((enemyDisciple.power * 2) * eMult * (0.8 + Math.random() * 0.4));
+       const eDmg = Math.floor(eAttack * eMult * (0.8 + Math.random() * 0.4));
        pHP -= eDmg;
        log.push({ round, actor: enemyDisciple.name, text: `в ответ ${flavor2} (${enemyDisciple.element}) на ${eDmg} урона`, icon: enemyDisciple.element });
        if (pHP <= 0) {
@@ -1787,7 +2017,7 @@ function ArenaView({ state, onReward }: { state: any, onReward: any }) {
     const won = pHP > 0;
     const rewards = { stones: won ? 800 : 200, prestige: won ? 15 : 2 };
     
-    setCombatData({ player, enemy: enemyDisciple, log, won, rewards, mode: '1v1' });
+    setCombatData({ player, enemy: enemyDisciple, log, won, rewards, mode: '1v1', participants: [selectedId] });
     setCombatState('fighting');
     setTimeout(() => {
       setCombatState('result');
@@ -1805,14 +2035,17 @@ function ArenaView({ state, onReward }: { state: any, onReward: any }) {
     const enemyTeam = { name: 'Секта Кровавого Лотоса', power: enemyPower };
     const playerTeam = { name: 'Ваша Секта', power: teamPower };
 
-    let pHP = teamPower * 10;
+    const baseHp = teamDisciples.reduce((acc: number, d: any) => acc + (d.combatStats ? d.combatStats.health : d.power * 10), 0);
+    const baseAttack = teamDisciples.reduce((acc: number, d: any) => acc + (d.combatStats ? d.combatStats.attack : d.power * 2), 0);
+
+    let pHP = Math.floor(baseHp * 1.15);
     let eHP = enemyPower * 10;
     const log = [];
     log.push({ round: 0, actor: 'Система', text: `Ваш отряд использует формацию [${formation}]`, icon: 'system' });
     
     let round = 1;
     while (pHP > 0 && eHP > 0 && round <= 5) {
-       const pDmg = Math.floor((teamPower * 2) * (0.8 + Math.random() * 0.4));
+       const pDmg = Math.floor((baseAttack * 1.15) * (0.8 + Math.random() * 0.4));
        eHP -= pDmg;
        log.push({ round, actor: playerTeam.name, text: `проводит скоординированную атаку, нанося ${pDmg} урона`, icon: 'attack' });
        if (eHP <= 0) break;
@@ -1826,7 +2059,7 @@ function ArenaView({ state, onReward }: { state: any, onReward: any }) {
     const won = pHP > 0;
     const rewards = { stones: won ? 3000 : 500, prestige: won ? 50 : 5 };
     
-    setCombatData({ player: playerTeam, enemy: enemyTeam, log, won, rewards, mode: 'team' });
+    setCombatData({ player: playerTeam, enemy: enemyTeam, log, won, rewards, mode: 'team', participants: team });
     setCombatState('fighting');
     setTimeout(() => {
       setCombatState('result');
@@ -2248,6 +2481,7 @@ const FORMATIONS_DATA = [
   { 
     name: 'Триада Земли', 
     desc: 'Сбалансированная линия из 3 учеников. Базовая тактика для малых групп.', 
+    reqStrategy: 0,
     slots: [
       { id: 0, label: 'Авангард', x: 50, y: 20, bonusRole: ['Танк', 'Воин'], bonusText: '+15% БМ Танк/Воин', bonusMult: 1.15 },
       { id: 1, label: 'Левый фланг', x: 20, y: 70, bonusRole: ['Атакующий', 'Маг'], bonusText: '+15% БМ Атакующий/Маг', bonusMult: 1.15 },
@@ -2257,6 +2491,7 @@ const FORMATIONS_DATA = [
   { 
     name: 'Квадрат', 
     desc: 'Защитное построение для 4 учеников.', 
+    reqStrategy: 0,
     slots: [
       { id: 0, label: 'Фронт Л', x: 30, y: 30, bonusRole: ['Танк'], bonusText: '+15% Танк', bonusMult: 1.15 },
       { id: 1, label: 'Фронт П', x: 70, y: 30, bonusRole: ['Воин'], bonusText: '+15% Воин', bonusMult: 1.15 },
@@ -2267,6 +2502,7 @@ const FORMATIONS_DATA = [
   {
     name: 'Алмазный Строй',
     desc: 'Усиленный центр для 4 учеников.',
+    reqStrategy: 10,
     slots: [
       { id: 0, label: 'Острие', x: 50, y: 15, bonusRole: ['Атакующий', 'Ассасин'], bonusText: '+15% Атака', bonusMult: 1.15 },
       { id: 1, label: 'Левое крыло', x: 20, y: 50, bonusRole: ['Воин', 'Танк'], bonusText: '+15% Воин/Танк', bonusMult: 1.15 },
@@ -2277,6 +2513,7 @@ const FORMATIONS_DATA = [
   { 
     name: 'Клинок прорыва', 
     desc: 'Агрессивная расстановка на 5 учеников.', 
+    reqStrategy: 20,
     slots: [
       { id: 0, label: 'Острие', x: 50, y: 15, bonusRole: ['Танк', 'Воин'], bonusText: '+15% Танк/Воин', bonusMult: 1.15 },
       { id: 1, label: 'Лезвие Л', x: 30, y: 40, bonusRole: ['Ассасин'], bonusText: '+15% Ассасин', bonusMult: 1.15 },
@@ -2288,6 +2525,7 @@ const FORMATIONS_DATA = [
   { 
     name: 'Круговая оборона', 
     desc: 'Глухая защита для 5 на все направления.', 
+    reqStrategy: 30,
     slots: [
       { id: 0, label: 'Центр', x: 50, y: 50, bonusRole: ['Поддержка'], bonusText: '+30% Поддержка', bonusMult: 1.3 },
       { id: 1, label: 'Север', x: 50, y: 15, bonusRole: ['Танк'], bonusText: '+15% Танк', bonusMult: 1.15 },
@@ -2314,16 +2552,16 @@ function TacticsView({ state, onUpdate, onUpdateTeams, initialTab }: { state: an
   const [localTeamId, setLocalTeamId] = useState<string>(activeTeamData?.id || 'team_1');
   const localTeamData = teams.find((t: any) => t.id === localTeamId) || activeTeamData;
 
-  const [localFormationName, setLocalFormationName] = useState<string>(localTeamData?.formation || 'Круговая оборона');
+  const [localFormationName, setLocalFormationName] = useState<string>(localTeamData?.formation || 'Триада Земли');
   
-  const currentFormat = FORMATIONS_DATA.find(f => f.name === localFormationName) || FORMATIONS_DATA[4];
+  const currentFormat = FORMATIONS_DATA.find(f => f.name === localFormationName) || FORMATIONS_DATA[0];
   
   const [localTeam, setLocalTeam] = useState<(string | null)[]>([]);
 
   useEffect(() => {
     if (!localTeamData) return;
     setLocalFormationName(localTeamData.formation);
-    const format = FORMATIONS_DATA.find(f => f.name === localTeamData.formation) || FORMATIONS_DATA[4];
+    const format = FORMATIONS_DATA.find(f => f.name === localTeamData.formation) || FORMATIONS_DATA[0];
     const arr = [...localTeamData.members];
     while (arr.length < format.slots.length) arr.push(null);
     setLocalTeam(arr.slice(0, format.slots.length));
@@ -2380,7 +2618,7 @@ function TacticsView({ state, onUpdate, onUpdateTeams, initialTab }: { state: an
       id: newId,
       name: `Отряд ${teams.length + 1}`,
       members: [],
-      formation: 'Круговая оборона'
+      formation: 'Триада Земли'
     };
     onUpdateTeams([...teams, newTeam], activeTeamId);
     setLocalTeamId(newId);
@@ -2579,23 +2817,29 @@ function TacticsView({ state, onUpdate, onUpdateTeams, initialTab }: { state: an
             <div className="p-6 bg-zinc-900 border border-zinc-800 rounded-sm">
               <h3 className="text-sm uppercase text-amber-500 tracking-widest mb-4">Доступные Построения</h3>
               <div className="space-y-3">
-                {FORMATIONS_DATA.map(f => (
+                {FORMATIONS_DATA.map(f => {
+                  const hasStrategy = (state.player?.stats.strategy || 0) >= (f.reqStrategy || 0);
+                  return (
                   <button
                     key={f.name}
-                    onClick={() => handleFormationChange(f.name)}
-                    className={`w-full text-left p-3 border transition-colors ${
+                    onClick={() => hasStrategy && handleFormationChange(f.name)}
+                    disabled={!hasStrategy}
+                    className={`w-full text-left p-3 border transition-colors relative ${
                       localFormationName === f.name 
                         ? 'border-amber-500/50 bg-amber-500/10 text-amber-400' 
-                        : 'border-zinc-800 bg-zinc-950 text-stone-400 hover:border-zinc-700'
+                        : hasStrategy ? 'border-zinc-800 bg-zinc-950 text-stone-400 hover:border-zinc-700' : 'border-red-900/30 bg-zinc-950/50 text-stone-600 cursor-not-allowed'
                     }`}
                   >
                     <div className="flex justify-between items-center mb-1">
-                       <span className="font-medium text-sm">{f.name}</span>
+                       <span className="font-medium text-sm flex items-center gap-2">
+                         {f.name}
+                         {!hasStrategy && <span className="text-[10px] text-red-500 uppercase font-bold tracking-widest border border-red-500/50 px-1 rounded-xs bg-red-500/10">Треб. Стратегия: {f.reqStrategy}</span>}
+                       </span>
                        <span className="text-[10px] font-mono px-2 py-0.5 bg-zinc-900 border border-zinc-800 text-zinc-500">Слотов: {f.slots.length}</span>
                     </div>
                     <div className="text-[10px] text-zinc-500 leading-tight">{f.desc}</div>
                   </button>
-                ))}
+                )})}
               </div>
             </div>
           )}

@@ -15,7 +15,9 @@ const createInitialDisciples = (): Disciple[] => [
     loyalty: 100,
     cultivationStage: 1,
     type: 'inner',
-    rank: 'Внутренний ученик'
+    rank: 'Внутренний ученик',
+    combatStats: { attack: 130, defense: 110, health: 1200, speed: 105 },
+    workStats: { mining: 10, farming: 10, alchemy: 20, crafting: 15 }
   },
   {
     id: generateId(),
@@ -28,7 +30,9 @@ const createInitialDisciples = (): Disciple[] => [
     loyalty: 90,
     cultivationStage: 0,
     type: 'inner',
-    rank: 'Внутренний ученик'
+    rank: 'Внутренний ученик',
+    combatStats: { attack: 95, defense: 60, health: 700, speed: 85 },
+    workStats: { mining: 5, farming: 5, alchemy: 10, crafting: 8 }
   },
   {
     id: generateId(),
@@ -41,7 +45,9 @@ const createInitialDisciples = (): Disciple[] => [
     loyalty: 90,
     cultivationStage: 0,
     type: 'inner',
-    rank: 'Внутренний ученик'
+    rank: 'Внутренний ученик',
+    combatStats: { attack: 60, defense: 85, health: 800, speed: 60 },
+    workStats: { mining: 5, farming: 15, alchemy: 10, crafting: 5 }
   },
   {
     id: generateId(),
@@ -54,7 +60,9 @@ const createInitialDisciples = (): Disciple[] => [
     loyalty: 80,
     cultivationStage: 0,
     type: 'outer',
-    rank: 'Внешний ученик'
+    rank: 'Внешний ученик',
+    combatStats: { attack: 10, defense: 25, health: 300, speed: 10 },
+    workStats: { mining: 45, farming: 30, alchemy: 5, crafting: 10 }
   },
   {
     id: generateId(),
@@ -67,7 +75,9 @@ const createInitialDisciples = (): Disciple[] => [
     loyalty: 80,
     cultivationStage: 0,
     type: 'outer',
-    rank: 'Внешний ученик'
+    rank: 'Внешний ученик',
+    combatStats: { attack: 15, defense: 15, health: 200, speed: 15 },
+    workStats: { mining: 10, farming: 10, alchemy: 35, crafting: 35 }
   },
   {
     id: generateId(),
@@ -80,7 +90,9 @@ const createInitialDisciples = (): Disciple[] => [
     loyalty: 80,
     cultivationStage: 0,
     type: 'outer',
-    rank: 'Внешний ученик'
+    rank: 'Внешний ученик',
+    combatStats: { attack: 20, defense: 10, health: 250, speed: 25 },
+    workStats: { mining: 15, farming: 40, alchemy: 10, crafting: 10 }
   },
   {
     id: generateId(),
@@ -93,7 +105,9 @@ const createInitialDisciples = (): Disciple[] => [
     loyalty: 80,
     cultivationStage: 0,
     type: 'outer',
-    rank: 'Внешний ученик'
+    rank: 'Внешний ученик',
+    combatStats: { attack: 18, defense: 20, health: 350, speed: 12 },
+    workStats: { mining: 35, farming: 10, alchemy: 10, crafting: 20 }
   },
   {
     id: generateId(),
@@ -106,17 +120,31 @@ const createInitialDisciples = (): Disciple[] => [
     loyalty: 80,
     cultivationStage: 0,
     type: 'outer',
-    rank: 'Внешний ученик'
+    rank: 'Внешний ученик',
+    combatStats: { attack: 10, defense: 20, health: 300, speed: 15 },
+    workStats: { mining: 10, farming: 40, alchemy: 15, crafting: 15 }
   }
 ];
 
 const getInitialState = (): GameState => ({
+  player: {
+    level: 1,
+    exp: 0,
+    stats: {
+      authority: 5,
+      charisma: 3,
+      strategy: 2,
+      wisdom: 3,
+      cunning: 2,
+      luck: 1
+    }
+  },
   resources: { stones: 1000, qi: 100, prestige: 10, herbs: 0, ore: 0, beastMaterials: 0, contribution: 0 },
   buildings: { mainHall: 1, mine: 1, cave: 1, alchemyLab: 0, herbGarden: 0, armory: 0, library: 0, market: 0, arena: 0 },
   inventory: { breakthroughPills: 0, recoveryPills: 0, strengthPills: 0, artifacts: [] },
   disciples: createInitialDisciples(),
   teams: [
-    { id: 'team_1', name: 'Отряд 1', members: [], formation: 'Круговая оборона' }
+    { id: 'team_1', name: 'Отряд 1', members: [], formation: 'Триада Земли' }
   ],
   activeTeamId: 'team_1',
   lastUpdate: Date.now(),
@@ -133,7 +161,7 @@ export function useGameState() {
              id: 'team_1',
              name: 'Отряд 1',
              members: parsed.team || [],
-             formation: parsed.formation || 'Круговая оборона'
+             formation: parsed.formation || 'Триада Земли'
           }];
           parsed.activeTeamId = 'team_1';
         }
@@ -141,6 +169,10 @@ export function useGameState() {
         // Ensure starting disciples exist if the save has no disciples (e.g. wiped save or legacy bug)
         if (!parsed.disciples || parsed.disciples.length === 0) {
             parsed.disciples = createInitialDisciples();
+        }
+
+        if (!parsed.player) {
+          parsed.player = getInitialState().player;
         }
 
         const initialBuildings = getInitialState().buildings;
@@ -171,10 +203,25 @@ export function useGameState() {
         const now = Date.now();
         const deltaSeconds = (now - prev.lastUpdate) / 1000;
         
-        const stoneIncome = prev.buildings.mine * 5 * deltaSeconds; 
-        const oreIncome = prev.buildings.mine * 1 * deltaSeconds;
+        let miningBonus = 0;
+        let farmingBonus = 0;
+
+        prev.disciples.forEach(d => {
+            const isInner = ['Глава секты', 'Старейшина', 'Элита', 'Внутренний ученик', 'Новобранец'].includes(d.rank || (d.type === 'inner' ? 'Внутренний ученик' : 'Внешний ученик'));
+            // only outer disciples not in active team can work (or simplify: just outer disciples not in team)
+            if (!isInner && !prev.teams?.some(t => t.members.includes(d.id))) {
+                const mineStat = d.workStats?.mining || (d.element === 'Земля' || d.element === 'Металл' ? d.power : 0);
+                const farmStat = d.workStats?.farming || (d.element === 'Дерево' || d.element === 'Вода' ? d.power : 0);
+                
+                miningBonus += (mineStat / 100);
+                farmingBonus += (farmStat / 100);
+            }
+        });
+
+        const stoneIncome = prev.buildings.mine * 5 * deltaSeconds * (1 + miningBonus); 
+        const oreIncome = prev.buildings.mine * 1 * deltaSeconds * (1 + miningBonus);
         const qiIncome = prev.buildings.cave * 2 * deltaSeconds;
-        const herbsIncome = prev.buildings.herbGarden * 1.5 * deltaSeconds;
+        const herbsIncome = prev.buildings.herbGarden * 1.5 * deltaSeconds * (1 + farmingBonus);
 
         let newBuildings = { ...prev.buildings };
         let newUpgrades = { ...prev.buildingUpgrades };
@@ -183,7 +230,32 @@ export function useGameState() {
         let newAlchemyTask = prev.alchemyTask;
         let newCraftingTask = prev.craftingTask;
         let newCultivatingTasks = { ...prev.cultivatingTasks };
+        let newTrainingTasks = { ...prev.trainingTasks };
         let stateChanged = false;
+        let moraleUpdated = false;
+
+        if (!prev.lastMoraleUpdate || now - prev.lastMoraleUpdate >= 60000) {
+          const leavingDisciples: string[] = [];
+          const charisma = prev.player?.stats.charisma || 0;
+          const leaveChance = Math.max(0.01, 0.1 - charisma * 0.002);
+          const moraleDrop = Math.max(0, 2 - charisma * 0.05);
+
+          newDisciples = newDisciples.map(d => {
+            const newLoyalty = Math.max(0, (d.loyalty || 0) - 1);
+            if (newLoyalty < 20 && Math.random() < leaveChance) {
+              // chance to leave per minute if loyalty < 20, mitigated by charisma
+              leavingDisciples.push(d.id);
+            }
+            return {
+              ...d,
+              morale: Math.min(100, Math.max(0, (d.morale ?? 100) - moraleDrop)), 
+              loyalty: newLoyalty
+            };
+          }).filter(d => !leavingDisciples.includes(d.id));
+          
+          moraleUpdated = true;
+          stateChanged = true;
+        }
 
         if (prev.buildingUpgrades) {
           Object.entries(prev.buildingUpgrades).forEach(([bId, upgrade]) => {
@@ -228,10 +300,29 @@ export function useGameState() {
                 const d = { ...newDisciples[dIndex] };
                 d.cultivationStage += 1;
                 d.level = (d.level || 1) + 1;
-                d.power = Math.floor(d.power * 2.5);
+                const multipliers = [1.5, 2.0, 2.0, 2.0];
+                const mult = multipliers[d.cultivationStage - 1] || 1.5;
+                d.power = Math.floor(d.power * mult);
+                d.loyalty = Math.min(100, (d.loyalty || 0) + 10);
+                d.morale = Math.min(100, (d.morale ?? 100) + 20);
                 newDisciples[dIndex] = d;
               }
               delete newCultivatingTasks[dId];
+              stateChanged = true;
+            }
+          });
+        }
+
+        if (prev.trainingTasks) {
+          Object.entries(prev.trainingTasks).forEach(([dId, task]) => {
+            if (task && now >= (task as { finishAt: number }).finishAt) {
+              const dIndex = newDisciples.findIndex(d => d.id === dId);
+              if (dIndex !== -1) {
+                const d = { ...newDisciples[dIndex] };
+                d.level = (d.level || 1) + 1;
+                newDisciples[dIndex] = d;
+              }
+              delete newTrainingTasks[dId];
               stateChanged = true;
             }
           });
@@ -246,6 +337,7 @@ export function useGameState() {
           alchemyTask: stateChanged ? newAlchemyTask : prev.alchemyTask,
           craftingTask: stateChanged ? newCraftingTask : prev.craftingTask,
           cultivatingTasks: stateChanged ? newCultivatingTasks : prev.cultivatingTasks,
+          trainingTasks: stateChanged ? newTrainingTasks : prev.trainingTasks,
           pendingResources: {
             stones: (prev.pendingResources?.stones || 0) + stoneIncome,
             ore: (prev.pendingResources?.ore || 0) + oreIncome,
@@ -256,6 +348,7 @@ export function useGameState() {
             contribution: prev.pendingResources?.contribution || 0,
           },
           lastUpdate: now,
+          lastMoraleUpdate: moraleUpdated ? now : prev.lastMoraleUpdate,
         };
       });
     }, 1000);
@@ -465,6 +558,12 @@ export function useGameState() {
         ...currentEq,
         [artifact.type]: artifact,
       };
+      
+      if (artifact.rarity === 'Эпический' || artifact.rarity === 'Легендарный' || artifact.rarity === 'Редкий') {
+        d.loyalty = Math.min(100, (d.loyalty || 0) + 5);
+        d.morale = Math.min(100, (d.morale ?? 100) + 10);
+      }
+
       d.power += artifact.powerBonus;
 
       newDisciples[dIndex] = d;
@@ -525,6 +624,9 @@ export function useGameState() {
         d.power += 200; // Temporary massive power bump
       }
 
+      d.loyalty = Math.min(100, (d.loyalty || 0) + 5);
+      d.morale = Math.min(100, (d.morale ?? 100) + 10);
+
       newDisciples[dIndex] = d;
 
       return {
@@ -540,25 +642,38 @@ export function useGameState() {
 
   const promoteDisciple = useCallback((discipleId: string, durationSeconds: number) => {
     setState((prev) => {
-      if (prev.inventory.breakthroughPills >= 1 && !prev.cultivatingTasks?.[discipleId]) {
-        const dIndex = prev.disciples.findIndex(d => d.id === discipleId);
-        if (dIndex === -1 || prev.disciples[dIndex].cultivationStage >= 4) return prev;
-        
-        return {
-          ...prev,
-          inventory: {
-            ...prev.inventory,
-            breakthroughPills: prev.inventory.breakthroughPills - 1,
-          },
-          cultivatingTasks: {
-            ...(prev.cultivatingTasks || {}),
-            [discipleId]: {
-              finishAt: Date.now() + durationSeconds * 1000
-            }
+      const dIndex = prev.disciples.findIndex(d => d.id === discipleId);
+      if (dIndex === -1 || prev.disciples[dIndex].cultivationStage >= 4 || prev.cultivatingTasks?.[discipleId]) return prev;
+      const d = prev.disciples[dIndex];
+      const s = d.cultivationStage;
+      let reqs = { breakPills: 0, beast: 0, level: 0 };
+      if (s === 0) reqs = { breakPills: 1, beast: 0, level: 20 };
+      if (s === 1) reqs = { breakPills: 1, beast: 0, level: 30 };
+      if (s === 2) reqs = { breakPills: 0, beast: 1000, level: 40 };
+      if (s === 3) reqs = { breakPills: 0, beast: 0, level: 50 }; // requires legend artifact
+
+      if (d.level < reqs.level) return prev;
+      if (prev.inventory.breakthroughPills < reqs.breakPills) return prev;
+      if ((prev.resources.beastMaterials || 0) < reqs.beast) return prev;
+      if (s === 3 && !(prev.inventory.artifacts || []).some(a => a.rarity === 'Легендарный')) return prev;
+
+      return {
+        ...prev,
+        inventory: {
+          ...prev.inventory,
+          breakthroughPills: prev.inventory.breakthroughPills - reqs.breakPills,
+        },
+        resources: {
+          ...prev.resources,
+          beastMaterials: (prev.resources.beastMaterials || 0) - reqs.beast,
+        },
+        cultivatingTasks: {
+          ...(prev.cultivatingTasks || {}),
+          [discipleId]: {
+            finishAt: Date.now() + durationSeconds * 1000
           }
-        };
-      }
-      return prev;
+        }
+      };
     });
   }, []);
 
@@ -579,7 +694,11 @@ export function useGameState() {
              const d = { ...newDisciples[dIndex] };
              d.cultivationStage += 1;
              d.level = (d.level || 1) + 1;
-             d.power = Math.floor(d.power * 2.5);
+             const multipliers = [1.5, 2.0, 2.0, 2.0];
+             const mult = multipliers[d.cultivationStage - 1] || 1.5;
+             d.power = Math.floor(d.power * mult);
+             d.loyalty = Math.min(100, (d.loyalty || 0) + 10);
+             d.morale = Math.min(100, (d.morale ?? 100) + 20);
              newDisciples[dIndex] = d;
           }
 
@@ -598,7 +717,7 @@ export function useGameState() {
     });
   }, []);
 
-  const claimArenaReward = useCallback((stones: number, prestige: number, isWin: boolean, mode: string) => {
+  const claimArenaReward = useCallback((stones: number, prestige: number, isWin: boolean, mode: string, participants: string[] = []) => {
     setState((prev) => {
       const arena = prev.arena || { rating: 1000, duelsPlayed: 0, duelsWon: 0, tournamentsPlayed: 0, tournamentsWon: 0 };
       let newArena = { ...arena };
@@ -613,6 +732,22 @@ export function useGameState() {
         if (isWin) newArena.tournamentsWon = (newArena.tournamentsWon || 0) + 1;
       }
 
+      const newDisciples = prev.disciples.map(d => {
+        if (participants.includes(d.id)) {
+          let newLoyalty = d.loyalty;
+          let newMorale = d.morale ?? 100;
+          if (isWin) {
+            newLoyalty = Math.min(100, newLoyalty + 2); // Малый рост
+            newMorale = Math.min(100, newMorale + 30); // Значительный рост
+          } else {
+            newLoyalty = Math.max(0, newLoyalty - 5); // Снижение
+            newMorale = Math.max(0, newMorale - 30); // Снижение
+          }
+          return { ...d, loyalty: newLoyalty, morale: newMorale };
+        }
+        return d;
+      });
+
       return {
         ...prev,
         resources: {
@@ -620,7 +755,8 @@ export function useGameState() {
           stones: prev.resources.stones + stones,
           prestige: prev.resources.prestige + prestige,
         },
-        arena: newArena
+        arena: newArena,
+        disciples: newDisciples
       };
     });
   }, []);
@@ -648,6 +784,64 @@ export function useGameState() {
       teams,
       activeTeamId
     }));
+  }, []);
+
+  const trainDisciple = useCallback((discipleId: string, durationSeconds: number) => {
+    setState((prev) => {
+      if (prev.resources.qi >= 10 && !prev.trainingTasks?.[discipleId]) {
+        const dIndex = prev.disciples.findIndex(d => d.id === discipleId);
+        if (dIndex === -1) return prev;
+        
+        return {
+          ...prev,
+          resources: {
+            ...prev.resources,
+            qi: prev.resources.qi - 10
+          },
+          trainingTasks: {
+            ...(prev.trainingTasks || {}),
+            [discipleId]: {
+              finishAt: Date.now() + durationSeconds * 1000
+            }
+          }
+        };
+      }
+      return prev;
+    });
+  }, []);
+
+  const instantTrainDisciple = useCallback((discipleId: string) => {
+    setState((prev) => {
+      const task = prev.trainingTasks?.[discipleId];
+      if (task) {
+        const remainingMs = Math.max(0, task.finishAt - Date.now());
+        const expectedQi = Math.ceil(remainingMs / 1000) * 2; // 2 Qi per second
+        
+        if (prev.resources.qi >= expectedQi) {
+          const newTrainingTasks = { ...prev.trainingTasks };
+          delete newTrainingTasks[discipleId];
+          
+          const newDisciples = [...prev.disciples];
+          const dIndex = newDisciples.findIndex(d => d.id === discipleId);
+          if (dIndex !== -1) {
+             const d = { ...newDisciples[dIndex] };
+             d.level = (d.level || 1) + 1;
+             newDisciples[dIndex] = d;
+          }
+
+          return {
+            ...prev,
+            resources: {
+              ...prev.resources,
+              qi: prev.resources.qi - expectedQi,
+            },
+            disciples: newDisciples,
+            trainingTasks: newTrainingTasks
+          };
+        }
+      }
+      return prev;
+    });
   }, []);
 
   const claimResources = useCallback(() => {
@@ -701,5 +895,5 @@ export function useGameState() {
     }));
   }, []);
 
-  return { state, upgradeBuilding, instantUpgradeBuilding, claimResources, addDisciple, changeDiscipleRank, craftPill, instantCraftPill, craftArtifact, instantCraftArtifact, equipArtifact, unequipArtifact, usePill, promoteDisciple, instantPromoteDisciple, claimArenaReward, updateTactics, updateTeams, clearSave, addCheats };
+  return { state, upgradeBuilding, instantUpgradeBuilding, claimResources, addDisciple, changeDiscipleRank, craftPill, instantCraftPill, craftArtifact, instantCraftArtifact, equipArtifact, unequipArtifact, usePill, promoteDisciple, instantPromoteDisciple, trainDisciple, instantTrainDisciple, claimArenaReward, updateTactics, updateTeams, clearSave, addCheats };
 }

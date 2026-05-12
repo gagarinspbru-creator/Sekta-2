@@ -35,7 +35,7 @@ export interface Inventory {
   artifacts?: Artifact[];
 }
 
-export type FormationType = 'Клинок прорыва' | 'Черепаха' | 'Круговая оборона' | 'Волчья стая' | 'Лотос';
+export type FormationType = 'Клинок прорыва' | 'Черепаха' | 'Круговая оборона' | 'Волчья стая' | 'Лотос' | 'Триада Земли';
 export type Rarity = 'Обычный' | 'Редкий' | 'Эпический' | 'Легендарный';
 export type Role = 'Воин' | 'Маг' | 'Атакующий' | 'Танк' | 'Поддержка' | 'Ассасин';
 export type Element = 'Огонь' | 'Вода' | 'Дерево' | 'Металл' | 'Земля';
@@ -48,11 +48,11 @@ export interface TeamSetup {
 }
 
 export const CULTIVATION_STAGES = [
-  'Плавка Ци',
-  'Фундамент',
-  'Золотая Пилюля',
-  'Младенец-Душа',
-  'Трансформация Духа',
+  'Период Плавки Ци',
+  'Период Фундамента',
+  'Период Золотого Пилюля',
+  'Период Младенца-Нашествия',
+  'Период Трансформации Духа',
 ];
 
 export type RankType = 
@@ -78,6 +78,19 @@ export interface Disciple {
   power: number;
   basePower?: number;
   loyalty: number;
+  morale?: number;
+  combatStats?: {
+    attack: number;
+    defense: number;
+    health: number;
+    speed: number;
+  };
+  workStats?: {
+    mining: number;
+    farming: number;
+    alchemy: number;
+    crafting: number;
+  };
   buffs?: {
     strengthUntil?: number;
   };
@@ -91,7 +104,21 @@ export interface Disciple {
   };
 }
 
+export interface PlayerProfile {
+  level: number;
+  exp: number;
+  stats: {
+    authority: number; // Авторитет
+    charisma: number;  // Харизма
+    strategy: number;  // Стратегия
+    wisdom: number;    // Мудрость
+    cunning: number;   // Хитрость
+    luck: number;      // Удача
+  };
+}
+
 export interface GameState {
+  player?: PlayerProfile;
   resources: Resources;
   pendingResources?: Resources;
   buildings: Buildings;
@@ -105,6 +132,7 @@ export interface GameState {
   alchemyTask?: { type: 'breakthroughPills' | 'recoveryPills' | 'strengthPills'; count: number; finishAt: number };
   craftingTask?: { artifact: Artifact; finishAt: number };
   cultivatingTasks?: Record<string, { finishAt: number }>;
+  trainingTasks?: Record<string, { finishAt: number }>;
   arena?: { 
     rating: number;
     duelsPlayed?: number;
@@ -113,4 +141,5 @@ export interface GameState {
     tournamentsWon?: number;
   };
   lastUpdate: number;
+  lastMoraleUpdate?: number;
 }
