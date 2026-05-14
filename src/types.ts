@@ -117,6 +117,17 @@ export interface PlayerProfile {
   };
 }
 
+export interface CombatHistory {
+  id: string;
+  timestamp: number;
+  mode: '1v1' | 'team';
+  playerTeamName: string;
+  enemyTeamName: string;
+  playerPower: number;
+  enemyPower: number;
+  won: boolean;
+}
+
 export interface GameState {
   player?: PlayerProfile;
   resources: Resources;
@@ -133,12 +144,15 @@ export interface GameState {
   craftingTask?: { artifact: Artifact; finishAt: number };
   cultivatingTasks?: Record<string, { finishAt: number }>;
   trainingTasks?: Record<string, { finishAt: number }>;
+  nextInnerLimitAt?: number;
+  bonusInnerLimit?: number;
   arena?: { 
     rating: number;
     duelsPlayed?: number;
     duelsWon?: number;
     tournamentsPlayed?: number;
     tournamentsWon?: number;
+    history?: CombatHistory[];
   };
   lastUpdate: number;
   lastMoraleUpdate?: number;

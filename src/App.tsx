@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Pickaxe, Scroll, Users, Home, Settings, Zap, Gem, Award, FlaskConical, Swords, Leaf, Sparkles, Shield, Flame, Skull, Crosshair, Droplets, Mountain, LayoutGrid, List, Pickaxe as MiningIcon, ChevronDown, User } from 'lucide-react';
+import { Pickaxe, Scroll, Users, Home, Settings, Zap, Gem, Award, FlaskConical, Swords, Leaf, Sparkles, Shield, Flame, Skull, Crosshair, Droplets, Mountain, LayoutGrid, List, Pickaxe as MiningIcon, ChevronDown, User, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useGameState } from './hooks/useGameState';
 import { CULTIVATION_STAGES } from './types';
@@ -20,18 +20,23 @@ export const getDiscipleRank = (d: any) => d.rank || (d.type === 'inner' || (!d.
 export const isInnerDisciple = (d: any) => ['Глава секты', 'Старейшина', 'Элита', 'Внутренний ученик', 'Новобранец'].includes(getDiscipleRank(d));
 
 export default function App() {
-  const { state, upgradeBuilding, instantUpgradeBuilding, addDisciple, changeDiscipleRank, craftPill, instantCraftPill, craftArtifact, instantCraftArtifact, equipArtifact, unequipArtifact, usePill, promoteDisciple, instantPromoteDisciple, trainDisciple, instantTrainDisciple, clearSave, addCheats, claimArenaReward, updateTactics, updateTeams, claimResources } = useGameState();
+  const { state, upgradeBuilding, instantUpgradeBuilding, addDisciple, changeDiscipleRank, craftPill, instantCraftPill, craftArtifact, instantCraftArtifact, equipArtifact, unequipArtifact, usePill, promoteDisciple, instantPromoteDisciple, trainDisciple, instantTrainDisciple, clearSave, addCheats, claimArenaReward, updateTactics, updateTeams, claimResources, instantIncreaseInnerLimit } = useGameState();
   const [currentView, setCurrentView] = useState<'overview' | 'buildings' | 'disciples' | 'gacha' | 'alchemy' | 'cultivation' | 'arena' | 'teams' | 'tactics'>('overview');
 
   const { resources } = state;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-zinc-950 text-stone-300 font-serif border-8 border-zinc-900 box-border">
+    <div 
+      className="flex h-screen overflow-hidden bg-cover bg-center bg-no-repeat text-stone-300 font-serif border-8 border-zinc-900 box-border relative"
+      style={{ backgroundImage: "url('/bg.png'), url('/bg.jpg'), url('/bg.jpeg'), linear-gradient(to bottom right, #09090b, #18181b)" }}
+    >
+      <div className="absolute inset-0 bg-zinc-950/60 pointer-events-none"></div>
+      
       {/* Sidebar */}
-      <aside className="w-56 bg-zinc-950 border-r border-zinc-800 flex flex-col">
+      <aside className="w-56 bg-zinc-950/40 backdrop-blur-md border-r border-zinc-800 flex flex-col relative z-10">
         <div className="p-4 border-b border-zinc-800 flex flex-col">
-          <span className="text-[10px] uppercase tracking-widest text-amber-500/70">Секта</span>
-          <span className="text-xl font-bold text-amber-400">НЕБЕСНЫЙ ПРЕДЕЛ</span>
+          <span className="text-[10px] uppercase tracking-widest text-amber-500/70 leading-none mb-1">Секта</span>
+          <span className="text-xl font-bold text-amber-400 leading-none">НЕБЕСНЫЙ ПРЕДЕЛ</span>
         </div>
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
           <NavItem 
@@ -98,7 +103,7 @@ export default function App() {
           </button>
           <button 
             onClick={clearSave}
-            className="flex items-center gap-2 text-[10px] uppercase text-stone-500 hover:text-red-400 transition-colors w-full p-2 border border-zinc-800 hover:bg-zinc-900 rounded-sm justify-center"
+            className="flex items-center gap-2 text-[10px] uppercase text-stone-500 hover:text-red-400 transition-colors w-full p-2 border border-zinc-800 hover:bg-zinc-900/60 backdrop-blur-md rounded-sm justify-center"
           >
             <Settings size={12} /> Начать заново
           </button>
@@ -119,20 +124,20 @@ export default function App() {
             <ResourceItem value={resources.prestige} label="Репутация" colorScheme="amber" symbol="★" />
           </div>
           <div className="text-right hidden sm:block">
-            <div className="text-[10px] uppercase text-stone-500 mb-1">Стадия Главы</div>
-            <div className="px-4 py-1 border border-amber-500/50 rounded-full text-amber-400 text-sm">
+            <div className="text-[10px] uppercase text-stone-500 mb-0.5">Стадия Главы</div>
+            <div className="text-amber-400 text-sm font-medium">
               Зарождение Души (Ранг III)
             </div>
           </div>
         </header>
 
         {/* Views */}
-        <main className="flex-1 overflow-y-auto p-8 bg-zinc-950">
+        <main className="flex-1 overflow-y-auto p-8 bg-zinc-950/60 backdrop-blur-md">
           <div className="max-w-5xl mx-auto">
             {currentView === 'overview' && <OverviewView state={state} />}
             {currentView === 'buildings' && <BuildingsView state={state} onUpgrade={upgradeBuilding} onInstantUpgrade={instantUpgradeBuilding} onClaim={claimResources} />}
             {currentView === 'disciples' && <DisciplesView state={state} onEquip={equipArtifact} onUnequip={unequipArtifact} onChangeRank={changeDiscipleRank} onUsePill={usePill} />}
-            {currentView === 'gacha' && <GachaView state={state} onAdd={addDisciple} />}
+            {currentView === 'gacha' && <GachaView state={state} onAdd={addDisciple} onInstantLimit={instantIncreaseInnerLimit} />}
             {currentView === 'alchemy' && <AlchemyView state={state} onCraftPill={craftPill} onInstantCraftPill={instantCraftPill} onCraftArtifact={craftArtifact} onInstantCraftArtifact={instantCraftArtifact} />}
             {currentView === 'cultivation' && <CultivationView state={state} onPromote={promoteDisciple} onInstantPromote={instantPromoteDisciple} onTrain={trainDisciple} onInstantTrain={instantTrainDisciple} />}
             {currentView === 'teams' && <TacticsView state={state} onUpdate={updateTactics} onUpdateTeams={updateTeams} initialTab="teams" />}
@@ -142,13 +147,13 @@ export default function App() {
         </main>
         
         {/* Footer */}
-        <footer className="h-10 bg-zinc-900 border-t border-zinc-800 px-6 flex items-center justify-between text-[10px] font-mono text-zinc-500">
+        <footer className="h-6 bg-zinc-950/60 backdrop-blur-md border-t border-zinc-900 px-6 flex items-center justify-between text-[9px] font-mono text-zinc-600">
           <div className="flex gap-6">
             <span>ВЕРСИЯ: 0.1.5</span>
             <span>СЕРВЕР: ДУХОВНЫЙ ПИК</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-green-500"></span>
+            <span className="w-1.5 h-1.5 rounded-full bg-green-500/50"></span>
             <span>СВЯЗЬ С НЕБЕСАМИ СТАБИЛЬНА</span>
           </div>
         </footer>
@@ -165,7 +170,7 @@ function NavItem({ label, isActive, onClick, icon }: { label: string, isActive: 
       onClick={onClick}
       className={`w-full text-left px-4 py-3 text-sm flex items-center gap-3 transition-colors ${
         isActive 
-          ? 'bg-zinc-900 border-l-2 border-amber-500 text-amber-400' 
+          ? 'bg-zinc-900/60 backdrop-blur-md border-l-2 border-amber-500 text-amber-400' 
           : 'text-stone-500 hover:text-sky-200 border-l-2 border-transparent'
       }`}
     >
@@ -291,16 +296,20 @@ function OverviewView({ state }: { state: any }) {
   
   const totalPower = disciples.reduce((acc: number, d: any) => acc + d.power, 0);
   const avgPower = disciples.length > 0 ? Math.floor(totalPower / disciples.length) : 0;
+  
+  const [historyMode, setHistoryMode] = useState<'1v1' | 'team'>('1v1');
+  const [historyIndex, setHistoryIndex] = useState(0);
+  const filteredHistory = arena?.history?.filter((h: any) => h.mode === historyMode).reverse() || [];
 
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6 pb-20">
       <div>
         <h2 className="text-2xl font-light text-stone-100 mb-2">Обзор Секты</h2>
         <p className="text-stone-500 text-sm">Сводная информация о состоянии вашей секты, ресурсах и учениках.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-sm">
+        <div className="p-4 bg-zinc-900/60 backdrop-blur-md border border-zinc-800 rounded-sm">
           <div className="text-stone-500 text-xs uppercase tracking-wider mb-2">Всего учеников</div>
           <div className="text-2xl text-stone-200 font-light">{disciples.length}</div>
           <div className="text-xs text-stone-500 mt-2 flex justify-between">
@@ -308,37 +317,37 @@ function OverviewView({ state }: { state: any }) {
             <span>Внешние: <span className="text-amber-500">{outerDisciples.length}</span></span>
           </div>
         </div>
-        <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-sm">
+        <div className="p-4 bg-zinc-900/60 backdrop-blur-md border border-zinc-800 rounded-sm">
           <div className="text-stone-500 text-xs uppercase tracking-wider mb-2">Общая Мощь</div>
           <div className="text-2xl text-amber-500 font-light">{totalPower}</div>
           <div className="text-xs text-stone-500 mt-2">
             В среднем: <span className="text-stone-300">{avgPower}</span>
           </div>
         </div>
-        <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-sm">
+        <div className="p-4 bg-zinc-900/60 backdrop-blur-md border border-zinc-800 rounded-sm">
           <div className="text-stone-500 text-xs uppercase tracking-wider mb-2">Арена</div>
           <div className="text-2xl text-sky-400 font-light">{arena?.rating || 1000}</div>
           <div className="text-xs text-stone-500 mt-2">
             Рейтинг секты
           </div>
         </div>
-        <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-sm">
+        <div className="p-4 bg-zinc-900/60 backdrop-blur-md border border-zinc-800 rounded-sm">
           <div className="text-stone-500 text-xs uppercase tracking-wider mb-2">События</div>
           <div className="text-emerald-400 font-light text-xs mt-3 uppercase tracking-widest">Турнир через 2 дн.</div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="p-6 bg-zinc-900 border border-zinc-800 rounded-sm">
-          <h3 className="text-sm uppercase text-amber-500 mb-4 tracking-widest flex items-center gap-2">
-            <User size={14} />
-            Профиль Главы
+        <div className="p-6 bg-zinc-900/60 backdrop-blur-md border border-zinc-800 rounded-sm">
+          <h3 className="text-sm uppercase text-amber-500 mb-4 tracking-widest flex items-center justify-between gap-2">
+            <span className="flex items-center gap-2"><User size={14} /> Профиль Главы</span>
+            <span className="text-[10px] text-zinc-500 capitalize font-normal opacity-60">Опыт дается за постройки, найм и крафт</span>
           </h3>
           {state.player && (
             <div className="space-y-4">
               <div className="flex justify-between items-center border-b border-zinc-800/50 pb-2">
                 <div className="text-stone-300 text-sm">Уровень / Опыт</div>
-                <div className="text-stone-400 text-xs font-mono">{state.player.level} <span className="opacity-50">/ {state.player.exp} xp</span></div>
+                <div className="text-stone-400 text-xs font-mono">{state.player.level} <span className="opacity-50">/ {state.player.exp}/{state.player.level * 100} xp</span></div>
               </div>
               <div className="grid grid-cols-2 gap-x-4 gap-y-2 pt-2">
                 <div className="flex justify-between items-center">
@@ -370,7 +379,7 @@ function OverviewView({ state }: { state: any }) {
           )}
         </div>
 
-        <div className="p-6 bg-zinc-900 border border-zinc-800 rounded-sm">
+        <div className="p-6 bg-zinc-900/60 backdrop-blur-md border border-zinc-800 rounded-sm">
           <h3 className="text-sm uppercase text-stone-400 mb-4 tracking-widest flex items-center gap-2">
             <Swords size={14} className="text-sky-400" />
             Дуэли и Турниры
@@ -395,7 +404,7 @@ function OverviewView({ state }: { state: any }) {
           </div>
         </div>
 
-        <div className="p-6 bg-zinc-900 border border-zinc-800 rounded-sm">
+        <div className="p-6 bg-zinc-900/60 backdrop-blur-md border border-zinc-800 rounded-sm">
           <h3 className="text-sm uppercase text-stone-400 mb-4 tracking-widest flex items-center gap-2">
             <FlaskConical size={14} className="text-purple-400" />
             Инвентарь и Ресурсы
@@ -417,6 +426,90 @@ function OverviewView({ state }: { state: any }) {
                <div className="text-stone-300 text-sm">Пилюли / Артефакты</div>
                <div className="text-sky-400 text-xs font-mono">{state.inventory?.pills?.length || 0} / {state.inventory?.artifacts?.length || 0}</div>
              </div>
+          </div>
+        </div>
+        <div className="p-6 bg-zinc-900/60 backdrop-blur-md border border-zinc-800 rounded-sm flex flex-col">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-sm uppercase text-stone-400 tracking-widest flex items-center gap-2">
+              <Scroll size={14} className="text-amber-400" />
+              История Сражений
+            </h3>
+            <div className="flex gap-2">
+              <button 
+                 onClick={() => { setHistoryMode('1v1'); setHistoryIndex(0); }}
+                 className={`px-4 py-1.5 text-[10px] uppercase tracking-widest border transition-colors ${historyMode === '1v1' ? 'border-amber-500 bg-amber-500/10 text-amber-400' : 'border-zinc-800 text-stone-500 hover:border-zinc-700'}`}
+              >
+                Дуэли
+              </button>
+              <button 
+                 onClick={() => { setHistoryMode('team'); setHistoryIndex(0); }}
+                 className={`px-4 py-1.5 text-[10px] uppercase tracking-widest border transition-colors ${historyMode === 'team' ? 'border-purple-500 bg-purple-500/10 text-purple-400' : 'border-zinc-800 text-stone-500 hover:border-zinc-700'}`}
+              >
+                Турниры
+              </button>
+            </div>
+          </div>
+          
+          <div className="space-y-3 flex-1 flex flex-col">
+            {filteredHistory.length === 0 ? (
+              <div className="text-center flex-1 p-6 flex items-center justify-center bg-zinc-950/50 border border-zinc-800 text-stone-500 text-sm">
+                История сражений пуста
+              </div>
+            ) : (
+              (() => {
+                const h = filteredHistory[historyIndex];
+                if (!h) return null;
+                return (
+                  <div className="flex-1 flex flex-col justify-between h-full space-y-4">
+                    <div className="flex flex-col flex-1 md:flex-row md:items-center justify-between p-4 bg-zinc-950/60 backdrop-blur-md border border-zinc-800">
+                      <div className="flex items-center gap-4 flex-1">
+                        <div className="flex flex-col items-start w-1/3">
+                          <span className="text-stone-300 text-sm font-medium truncate w-full">{h.playerTeamName}</span>
+                          <span className="text-amber-400 text-[10px] font-mono mt-0.5">БМ: {h.playerPower}</span>
+                        </div>
+                        <div className="flex flex-col items-center justify-center px-4 w-1/3">
+                          {h.won ? (
+                            <span className="text-emerald-500 text-xs uppercase tracking-widest font-bold">Победа</span>
+                          ) : (
+                            <span className="text-red-500 text-xs uppercase tracking-widest font-bold">Поражение</span>
+                          )}
+                          <span className="text-zinc-600 text-[10px] uppercase">VS</span>
+                        </div>
+                        <div className="flex flex-col items-end w-1/3 text-right">
+                          <span className="text-stone-300 text-sm font-medium truncate w-full">{h.enemyTeamName}</span>
+                          <span className="text-rose-400 text-[10px] font-mono mt-0.5">БМ: {h.enemyPower}</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex justify-between items-center pt-2 border-t border-zinc-800/50">
+                      <button 
+                         onClick={() => setHistoryIndex(Math.max(0, historyIndex - 1))}
+                         disabled={historyIndex === 0}
+                         className="p-2 border border-zinc-800 text-stone-500 hover:text-stone-300 hover:border-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors rounded-sm"
+                      >
+                         <ChevronLeft size={16} />
+                      </button>
+                      <div className="flex flex-col items-center">
+                        <span className="text-xs text-stone-500 font-mono">
+                          {historyIndex + 1} / {filteredHistory.length}
+                        </span>
+                        <span className="text-[10px] text-zinc-600 font-mono mt-0.5">
+                          {new Date(h.timestamp).toLocaleTimeString()}
+                        </span>
+                      </div>
+                      <button 
+                         onClick={() => setHistoryIndex(Math.min(filteredHistory.length - 1, historyIndex + 1))}
+                         disabled={historyIndex === filteredHistory.length - 1}
+                         className="p-2 border border-zinc-800 text-stone-500 hover:text-stone-300 hover:border-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors rounded-sm"
+                      >
+                         <ChevronRight size={16} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()
+            )}
           </div>
         </div>
       </div>
@@ -478,17 +571,17 @@ function BuildingsView({ state, onUpgrade, onInstantUpgrade, onClaim }: { state:
           &larr; Назад к территории
         </button>
 
-        <div className="p-8 bg-zinc-900 border border-zinc-800 rounded-sm relative">
+        <div className="p-8 bg-zinc-900/60 backdrop-blur-md border border-zinc-800 rounded-sm relative">
           <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 blur-3xl rounded-full"></div>
           
           <div className="flex items-start justify-between mb-8 relative z-10">
             <div className="flex items-center gap-6">
-              <div className="p-4 bg-zinc-950 border border-zinc-800 rounded-sm">
+              <div className="p-4 bg-zinc-950/60 backdrop-blur-md border border-zinc-800 rounded-sm">
                 {data.icon}
               </div>
               <div>
                 <h2 className="text-3xl font-light text-stone-100 mb-2">{data.title}</h2>
-                <div className="inline-flex px-3 py-1 bg-zinc-950 border border-zinc-800 text-[10px] text-zinc-400 uppercase tracking-widest">
+                <div className="inline-flex px-3 py-1 bg-zinc-950/60 backdrop-blur-md border border-zinc-800 text-[10px] text-zinc-400 uppercase tracking-widest">
                   Уровень <span className="text-stone-200 ml-2 font-mono text-sm">{level}</span>
                 </div>
               </div>
@@ -626,7 +719,7 @@ function BuildingsView({ state, onUpgrade, onInstantUpgrade, onClaim }: { state:
         </div>
         
         {hasPending && (
-          <div className="flex items-center gap-4 bg-zinc-900 border border-zinc-800 p-3 rounded-sm">
+          <div className="flex items-center gap-4 bg-zinc-900/60 backdrop-blur-md border border-zinc-800 p-3 rounded-sm">
             <div className="flex gap-3 text-[10px] font-mono whitespace-nowrap overflow-x-auto">
                 {pending.stones > 0 && <span className="text-amber-400">+{pending.stones.toFixed(0)} ֏</span>}
                 {pending.qi > 0 && <span className="text-purple-400">+{pending.qi.toFixed(0)} Ци</span>}
@@ -753,7 +846,7 @@ function BuildingCard({ title, level, description, icon, upgrading, now, onClick
   return (
     <div 
       onClick={onClick}
-      className={`p-6 bg-zinc-900 border ${upgrading ? 'border-sky-500/30' : 'border-zinc-800'} rounded-sm relative flex flex-col hover:border-amber-500/30 transition-colors cursor-pointer group`}
+      className={`p-6 bg-zinc-900/60 backdrop-blur-md border ${upgrading ? 'border-sky-500/30' : 'border-zinc-800'} rounded-sm relative flex flex-col hover:border-amber-500/30 transition-colors cursor-pointer group`}
     >
       <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-transparent group-hover:border-amber-500/70 transition-colors"></div>
       <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-transparent group-hover:border-amber-500/70 transition-colors"></div>
@@ -762,7 +855,7 @@ function BuildingCard({ title, level, description, icon, upgrading, now, onClick
         <div className={`transform group-hover:scale-110 transition-transform origin-top-left ${upgrading ? 'text-sky-500/50' : 'text-zinc-500'}`}>{icon}</div>
         
         <div className="flex flex-col items-end gap-1">
-          <div className="text-center px-4 py-2 bg-zinc-950 border border-zinc-800 group-hover:border-amber-500/30 transition-colors">
+          <div className="text-center px-4 py-2 bg-zinc-950/60 backdrop-blur-md border border-zinc-800 group-hover:border-amber-500/30 transition-colors">
             <div className="text-[10px] text-zinc-500 uppercase">Уровень</div>
             <div className="text-lg text-stone-100 font-mono">{level}</div>
           </div>
@@ -789,6 +882,7 @@ function DisciplesView({ state, onEquip, onUnequip, onChangeRank, onUsePill }: {
   const [selectedDiscipleId, setSelectedDiscipleId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'inner' | 'outer'>('inner');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [sortByPower, setSortByPower] = useState(true);
 
   const getRank = (d: any) => d.rank || (d.type === 'inner' || (!d.type && ['Эпический', 'Легендарный', 'Мифический'].includes(d.rarity)) ? 'Внутренний ученик' : 'Внешний ученик');
   const isInnerRank = (r: string) => ['Глава секты', 'Старейшина', 'Элита', 'Внутренний ученик', 'Новобранец'].includes(r);
@@ -808,7 +902,7 @@ function DisciplesView({ state, onEquip, onUnequip, onChangeRank, onUsePill }: {
       return { text: 'Алхимия', color: 'text-purple-400 border-purple-400/30 bg-purple-400/10' };
     }
     
-    return { text: 'Медитация', color: 'text-zinc-400 border-zinc-800 bg-zinc-950' };
+    return { text: 'Медитация', color: 'text-zinc-400 border-zinc-800 bg-zinc-950/60 backdrop-blur-md' };
   };
 
   if (selectedDiscipleId) {
@@ -829,7 +923,7 @@ function DisciplesView({ state, onEquip, onUnequip, onChangeRank, onUsePill }: {
           &larr; Назад к списку
         </button>
 
-        <div className="p-8 bg-zinc-900 border border-zinc-800 rounded-sm relative overflow-hidden">
+        <div className="p-8 bg-zinc-900/60 backdrop-blur-md border border-zinc-800 rounded-sm relative overflow-hidden">
           <div className={`absolute top-0 right-0 w-64 h-64 blur-3xl opacity-20 rounded-full ${tagClass.bg.replace('bg-', 'bg-')}`}></div>
           
           <div className="flex flex-col md:flex-row gap-8 relative z-10">
@@ -854,7 +948,7 @@ function DisciplesView({ state, onEquip, onUnequip, onChangeRank, onUsePill }: {
                          <select 
                            value={getDiscipleRank(d)}
                            onChange={(e) => onChangeRank(d.id, e.target.value)}
-                           className="appearance-none bg-zinc-950 border border-zinc-800 text-stone-300 text-xs px-3 py-1 pr-8 outline-none hover:border-amber-500/50 transition-colors cursor-pointer"
+                           className="appearance-none bg-zinc-950/60 backdrop-blur-md border border-zinc-800 text-stone-300 text-xs px-3 py-1 pr-8 outline-none hover:border-amber-500/50 transition-colors cursor-pointer"
                          >
                            {['Глава секты', 'Старейшина', 'Элита', 'Внутренний ученик', 'Новобранец', 'Внешний ученик', 'Служащий', 'Гость', 'Наёмник'].map(r => (
                              <option key={r} value={r}>{r}</option>
@@ -865,51 +959,51 @@ function DisciplesView({ state, onEquip, onUnequip, onChangeRank, onUsePill }: {
                      </div>
                    )}
                  </div>
-                 <div className="text-[10px] text-zinc-500 mt-1 mb-3 bg-zinc-950 p-2 border border-zinc-800/50 rounded-xs inline-block">
+                 <div className="text-[10px] text-zinc-500 mt-1 mb-3 bg-zinc-950/60 backdrop-blur-md p-2 border border-zinc-800/50 rounded-xs inline-block">
                    <span className="text-stone-400 font-medium">{getDiscipleRank(d)}:</span> {RANK_INFO[getDiscipleRank(d)]}
                  </div>
                  <div className="flex items-center gap-4 text-sm text-stone-400">
                    <span className="flex items-center gap-1.5"><Swords size={14}/> {d.role}</span>
                    <span className="flex items-center gap-1.5"><Sparkles size={14}/> {d.element}</span>
                    <span className="text-amber-500">[{CULTIVATION_STAGES[d.cultivationStage]}]</span>
-                   <span className="text-stone-300 font-mono bg-zinc-950 px-2 py-1 border border-zinc-800">Ур. {d.level || 1}</span>
+                   <span className="text-stone-300 font-mono bg-zinc-950/60 backdrop-blur-md px-2 py-1 border border-zinc-800">Ур. {d.level || 1}</span>
                  </div>
                  <div className="flex items-center gap-4 text-sm text-stone-400 mt-2">
                    <div className="flex flex-col gap-1 text-xs">
                      <span className="text-[10px] text-zinc-500 uppercase tracking-widest">Лояльность: <span className="text-stone-300 font-mono">{Math.floor(d.loyalty || 0)}/100</span></span>
-                     <div className="w-32 bg-zinc-900 h-1 rounded-full overflow-hidden">
+                     <div className="w-32 bg-zinc-900/60 backdrop-blur-md h-1 rounded-full overflow-hidden">
                        <div className="h-full bg-blue-500" style={{ width: `${Math.floor(d.loyalty || 0)}%` }}></div>
                      </div>
                    </div>
                    <div className="flex flex-col gap-1 text-xs">
                      <span className="text-[10px] text-zinc-500 uppercase tracking-widest">Мораль: <span className="text-stone-300 font-mono">{Math.floor(d.morale ?? 100)}/100</span></span>
-                     <div className="w-32 bg-zinc-900 h-1 rounded-full overflow-hidden">
+                     <div className="w-32 bg-zinc-900/60 backdrop-blur-md h-1 rounded-full overflow-hidden">
                        <div className="h-full bg-emerald-500" style={{ width: `${Math.floor(d.morale ?? 100)}%` }}></div>
                      </div>
                    </div>
                  </div>
               </div>
 
-              <div className="p-4 bg-zinc-950 border border-zinc-800 rounded-sm">
+              <div className="p-4 bg-zinc-950/60 backdrop-blur-md border border-zinc-800 rounded-sm">
                 <div className="text-[10px] uppercase text-zinc-500 mb-1">Боевая Мощь</div>
                 <div className="text-2xl text-amber-400 font-mono tracking-wider">{d.power}</div>
-                <div className="w-full bg-zinc-900 h-1 mt-2 rounded-full overflow-hidden">
+                <div className="w-full bg-zinc-900/60 backdrop-blur-md h-1 mt-2 rounded-full overflow-hidden">
                   <div className={`h-full ${tagClass.bg}`} style={{ width: `${(d.power / 500) * 100}%` }}></div>
                 </div>
 
                 {d.combatStats && (
                   <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
                     <div className="flex justify-between border-b border-zinc-800/50 pb-1">
-                      <span className="text-stone-500">Атака:</span><span className="text-stone-300 font-mono">{d.combatStats.attack}</span>
+                      <span className="text-stone-500">Атака:</span><span className="text-stone-300 font-mono">{Math.floor(d.power * 1.5)}</span>
                     </div>
                     <div className="flex justify-between border-b border-zinc-800/50 pb-1">
-                      <span className="text-stone-500">Защита:</span><span className="text-stone-300 font-mono">{d.combatStats.defense}</span>
+                      <span className="text-stone-500">Защита:</span><span className="text-stone-300 font-mono">{Math.floor(d.power * 1.0)}</span>
                     </div>
                     <div className="flex justify-between border-b border-zinc-800/50 pb-1">
-                      <span className="text-stone-500">Здоровье:</span><span className="text-emerald-400 font-mono">{d.combatStats.health}</span>
+                      <span className="text-stone-500">Здоровье:</span><span className="text-emerald-400 font-mono">{Math.floor(d.power * 12)}</span>
                     </div>
                     <div className="flex justify-between border-b border-zinc-800/50 pb-1">
-                      <span className="text-stone-500">Скорость:</span><span className="text-sky-300 font-mono">{d.combatStats.speed}</span>
+                      <span className="text-stone-500">Скорость:</span><span className="text-sky-300 font-mono">{Math.floor(d.power * 1.0)}</span>
                     </div>
                   </div>
                 )}
@@ -967,7 +1061,7 @@ function DisciplesView({ state, onEquip, onUnequip, onChangeRank, onUsePill }: {
                                 <button 
                                   key={art.id} 
                                   onClick={() => onEquip(d.id, art.id)}
-                                  className="text-left p-2 border border-zinc-800 hover:border-zinc-700 bg-zinc-900 transition-colors group"
+                                  className="text-left p-2 border border-zinc-800 hover:border-zinc-700 bg-zinc-900/60 backdrop-blur-md transition-colors group"
                                 >
                                   <div className={`text-[10px] truncate ${getRarityTag(art.rarity).text}`}>{art.name}</div>
                                   <div className="text-[10px] text-zinc-500 group-hover:text-amber-400 transition-colors">+{art.powerBonus} БМ</div>
@@ -1042,11 +1136,11 @@ function DisciplesView({ state, onEquip, onUnequip, onChangeRank, onUsePill }: {
           <div 
             key={d.id} 
             onClick={() => setSelectedDiscipleId(d.id)}
-            className={`flex flex-col border ${tagClass.border} hover:border-amber-500/50 bg-zinc-900 cursor-pointer transition-colors group h-64 relative overflow-hidden`}
+            className={`flex flex-col border ${tagClass.border} hover:border-amber-500/50 bg-zinc-900/60 backdrop-blur-md cursor-pointer transition-colors group h-64 relative overflow-hidden`}
           >
             <div className={`absolute top-0 right-0 w-32 h-32 blur-3xl opacity-10 rounded-full ${tagClass.bg}`}></div>
             <div className="flex-1 flex flex-col items-center justify-center p-4 relative z-10">
-               <div className={`w-16 h-16 rounded-full border border-zinc-800 flex items-center justify-center mb-4 bg-zinc-950 ${tagClass.borderTop}`}>
+               <div className={`w-16 h-16 rounded-full border border-zinc-800 flex items-center justify-center mb-4 bg-zinc-950/60 backdrop-blur-md ${tagClass.borderTop}`}>
                  <Users size={24} className="text-zinc-600 group-hover:text-stone-300 transition-colors" />
                </div>
                <h3 className="text-sm font-bold text-stone-200 mb-1 text-center">{d.name}</h3>
@@ -1054,7 +1148,7 @@ function DisciplesView({ state, onEquip, onUnequip, onChangeRank, onUsePill }: {
                <div className="text-[10px] text-zinc-500 uppercase mb-3">Ур. {d.level || 1} • {d.role}</div>
                <div className={`text-xs ${tagClass.text} font-mono mb-2`}>{d.power} БМ</div>
             </div>
-            <div className={`p-2 text-center text-[10px] uppercase font-bold tracking-widest bg-zinc-950 ${status.color} border-t-0 border-x-0 border-b border-b-zinc-800/50`}>
+            <div className={`p-2 text-center text-[10px] uppercase font-bold tracking-widest bg-zinc-950/60 backdrop-blur-md ${status.color} border-t-0 border-x-0 border-b border-b-zinc-800/50`}>
               {status.text}
             </div>
           </div>
@@ -1067,7 +1161,7 @@ function DisciplesView({ state, onEquip, onUnequip, onChangeRank, onUsePill }: {
             className={`p-3 bg-zinc-900/50 border border-zinc-800 hover:border-zinc-700 flex items-center justify-between cursor-pointer transition-colors group ${tagClass.borderTop}`}
           >
             <div className="flex items-center gap-4">
-               <div className={`w-10 h-10 border border-zinc-800 flex items-center justify-center bg-zinc-950`}>
+               <div className={`w-10 h-10 border border-zinc-800 flex items-center justify-center bg-zinc-950/60 backdrop-blur-md`}>
                   <Users size={16} className="text-zinc-600" />
                </div>
                <div className="flex flex-col">
@@ -1097,7 +1191,7 @@ function DisciplesView({ state, onEquip, onUnequip, onChangeRank, onUsePill }: {
           <div 
             key={d.id} 
             onClick={() => setSelectedDiscipleId(d.id)}
-            className={`p-3 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 flex flex-col items-center justify-center cursor-pointer transition-colors ${tagClass.borderTop} h-32 relative group`}
+            className={`p-3 bg-zinc-900/60 backdrop-blur-md border border-zinc-800 hover:border-zinc-700 flex flex-col items-center justify-center cursor-pointer transition-colors ${tagClass.borderTop} h-32 relative group`}
           >
             <span className="text-sm text-stone-300 font-medium mb-1 group-hover:text-amber-400 transition-colors">{d.name}</span>
             <span className="text-[10px] text-zinc-500 mb-1">{getDiscipleRank(d)}</span>
@@ -1112,7 +1206,7 @@ function DisciplesView({ state, onEquip, onUnequip, onChangeRank, onUsePill }: {
           <div 
             key={d.id} 
             onClick={() => setSelectedDiscipleId(d.id)}
-            className={`p-3 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 flex items-center justify-between cursor-pointer transition-colors ${tagClass.borderTop} group`}
+            className={`p-3 bg-zinc-900/60 backdrop-blur-md border border-zinc-800 hover:border-zinc-700 flex items-center justify-between cursor-pointer transition-colors ${tagClass.borderTop} group`}
           >
             <div className="flex flex-col">
               <span className="text-xs text-stone-300 font-medium group-hover:text-amber-400 transition-colors">{d.name}</span>
@@ -1127,7 +1221,8 @@ function DisciplesView({ state, onEquip, onUnequip, onChangeRank, onUsePill }: {
     }
   };
 
-  const displayedDisciples = activeTab === 'inner' ? innerDisciples : outerDisciples;
+  const baseDisplayedDisciples = activeTab === 'inner' ? innerDisciples : outerDisciples;
+  const displayedDisciples = sortByPower ? [...baseDisplayedDisciples].sort((a,b) => b.power - a.power) : baseDisplayedDisciples;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -1138,7 +1233,14 @@ function DisciplesView({ state, onEquip, onUnequip, onChangeRank, onUsePill }: {
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="flex gap-2 bg-zinc-900 p-1 border border-zinc-800 rounded-sm">
+          <button 
+             onClick={() => setSortByPower(!sortByPower)}
+             className={`px-4 py-2 text-xs uppercase tracking-widest font-medium transition-colors border hidden md:block ${sortByPower ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' : 'bg-zinc-900/60 backdrop-blur-md border-zinc-800 text-stone-500 hover:text-stone-300'}`}
+          >
+             Сортировка: {sortByPower ? 'По мощи' : 'По умолчанию'}
+          </button>
+          
+          <div className="flex gap-2 bg-zinc-900/60 backdrop-blur-md p-1 border border-zinc-800 rounded-sm">
             <button 
               onClick={() => setActiveTab('inner')} 
               className={`px-4 py-1.5 text-xs uppercase tracking-widest font-medium transition-colors ${activeTab === 'inner' ? 'bg-amber-500/10 text-amber-400' : 'text-stone-500 hover:text-stone-300'}`}
@@ -1153,7 +1255,7 @@ function DisciplesView({ state, onEquip, onUnequip, onChangeRank, onUsePill }: {
             </button>
           </div>
           
-          <div className="flex gap-1 bg-zinc-900 p-1 border border-zinc-800 rounded-sm">
+          <div className="flex gap-1 bg-zinc-900/60 backdrop-blur-md p-1 border border-zinc-800 rounded-sm">
             <button 
               onClick={() => setViewMode('grid')}
               className={`p-1.5 transition-colors ${viewMode === 'grid' ? 'bg-zinc-800 text-stone-200' : 'text-zinc-500 hover:text-stone-300'}`}
@@ -1171,7 +1273,7 @@ function DisciplesView({ state, onEquip, onUnequip, onChangeRank, onUsePill }: {
       </div>
 
       {displayedDisciples.length === 0 ? (
-        <div className="p-8 bg-zinc-900 border border-zinc-800 rounded-sm text-center">
+        <div className="p-8 bg-zinc-900/60 backdrop-blur-md border border-zinc-800 rounded-sm text-center">
           <Users size={32} className="mx-auto text-zinc-700 mb-4" />
           <h3 className="text-lg text-stone-300 mb-2">Учеников нет</h3>
           <p className="text-stone-500 text-sm">В этой категории пока нет учеников. Отправляйтесь во Врата Найма.</p>
@@ -1189,7 +1291,7 @@ function DisciplesView({ state, onEquip, onUnequip, onChangeRank, onUsePill }: {
   );
 }
 
-function GachaView({ state, onAdd }: { state: any, onAdd: any }) {
+function GachaView({ state, onAdd, onInstantLimit }: { state: any, onAdd: any, onInstantLimit: any }) {
   const discount = state.player ? state.player.stats.cunning * 0.005 : 0;
   const INNER_COST = Math.floor(1000 * (1 - discount));
   const OUTER_COST = Math.floor(200 * (1 - discount));
@@ -1198,9 +1300,29 @@ function GachaView({ state, onAdd }: { state: any, onAdd: any }) {
   const [summonResult, setSummonResult] = useState<any>(null);
   const [lastSummonType, setLastSummonType] = useState<'inner' | 'outer'>('inner');
 
-  const maxInner = state.player ? 5 + Math.floor(state.player.stats.authority / 10) : 5;
+  const maxInner = state.player ? 5 + Math.floor(state.player.stats.authority / 10) + (state.bonusInnerLimit || 0) : 5;
   const innerCount = state.disciples.filter((d: any) => d.type === 'inner' || ['Эпический', 'Легендарный', 'Мифический'].includes(d.rarity)).length;
   
+  const [timerStr, setTimerStr] = useState<string>('');
+
+  useEffect(() => {
+    if (!state.nextInnerLimitAt) {
+      setTimerStr('');
+      return;
+    }
+    const interval = setInterval(() => {
+      const remain = state.nextInnerLimitAt! - Date.now();
+      if (remain <= 0) {
+        setTimerStr('0s');
+        clearInterval(interval);
+      } else {
+        const s = Math.floor(remain / 1000);
+        setTimerStr(`${Math.floor(s / 60)}м ${s % 60}с`);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [state.nextInnerLimitAt]);
+
   const canSummonInner = state.resources.stones >= INNER_COST && innerCount < maxInner;
   const canSummonOuter = state.resources.stones >= OUTER_COST;
 
@@ -1309,7 +1431,7 @@ function GachaView({ state, onAdd }: { state: any, onAdd: any }) {
         <p className="text-stone-500 text-sm">Призовите культиваторов с разных уголков мира.<br/> Шанс Легендарного Внутреннего: 5%</p>
       </div>
 
-      <div className="p-12 bg-zinc-900 border border-zinc-800 rounded-sm relative flex flex-col items-center overflow-hidden min-h-[300px] justify-center mb-8">
+      <div className="p-12 bg-zinc-900/60 backdrop-blur-md border border-zinc-800 rounded-sm relative flex flex-col items-center overflow-hidden min-h-[300px] justify-center mb-8">
         <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-purple-500/30"></div>
         <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-purple-500/30"></div>
         
@@ -1317,18 +1439,25 @@ function GachaView({ state, onAdd }: { state: any, onAdd: any }) {
           {isSummoning ? (
             <motion.div 
               key="summoning"
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ 
-                scale: [1, 1.2, 1], 
-                opacity: 1,
-                rotate: [0, 5, -5, 0] 
-              }}
-              exit={{ scale: 1.5, opacity: 0, filter: "blur(10px)", transition: { duration: 0.2 } }}
-              transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }}
-              className="flex flex-col items-center"
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ scale: 2, opacity: 0, filter: "blur(15px)", transition: { duration: 0.3 } }}
+              className="flex flex-col items-center relative"
             >
-              <Scroll className="w-20 h-20 text-purple-400 mb-4 drop-shadow-[0_0_15px_rgba(168,85,247,0.8)]" />
-              <p className="text-purple-300 font-mono tracking-widest uppercase text-xs animate-pulse">Открытие Врат...</p>
+              <motion.div 
+                 animate={{ scale: [1, 1.3, 1], opacity: [0.4, 0.8, 0.4] }}
+                 transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-fuchsia-500/20 rounded-full blur-2xl -z-10"
+              />
+              <motion.div 
+                 animate={{ boxShadow: ['0 0 20px rgba(217,70,239,0.5)', '0 0 50px rgba(217,70,239,0.8)', '0 0 20px rgba(217,70,239,0.5)'] }}
+                 transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                 className="w-24 h-32 rounded-[100%] border-4 border-fuchsia-500 shadow-[0_0_30px_rgba(217,70,239,0.8)] flex items-center justify-center bg-zinc-950/60 backdrop-blur-md overflow-hidden relative"
+              >
+                <div className="absolute inset-0 opacity-50 bg-gradient-to-t from-fuchsia-500/40 to-transparent" />
+                <Sparkles className="w-8 h-8 text-fuchsia-200 opacity-80" />
+              </motion.div>
+              <p className="text-fuchsia-400 mt-6 font-mono text-xs uppercase tracking-widest animate-pulse">Открытие Врат...</p>
             </motion.div>
           ) : summonResult ? (
             <motion.div 
@@ -1401,7 +1530,7 @@ function GachaView({ state, onAdd }: { state: any, onAdd: any }) {
                 >
                   <span className="text-sm font-bold uppercase tracking-widest mb-1">Призыв Рабочего</span>
                   <span className="text-[10px] opacity-70 uppercase">Внешний ученик</span>
-                  <span className={`font-mono mt-2 px-3 py-1 bg-zinc-950 border ${canSummonOuter ? 'border-purple-500/30 text-purple-300' : 'border-zinc-800 text-zinc-600'}`}>
+                  <span className={`font-mono mt-2 px-3 py-1 bg-zinc-950/60 backdrop-blur-md border ${canSummonOuter ? 'border-purple-500/30 text-purple-300' : 'border-zinc-800 text-zinc-600'}`}>
                     {OUTER_COST} ֏
                   </span>
                 </motion.button>
@@ -1414,18 +1543,32 @@ function GachaView({ state, onAdd }: { state: any, onAdd: any }) {
                     disabled={!canSummonInner || isSummoning}
                     className={`flex flex-col items-center justify-center px-8 py-4 w-full h-full border transition-all ${
                       canSummonInner 
-                        ? 'border-purple-500 text-purple-300 shadow-[0_0_15px_rgba(168,85,247,0.3)] hover:shadow-[0_0_30px_rgba(168,85,247,0.5)]' 
+                        ? 'border-fuchsia-500 text-fuchsia-200 bg-fuchsia-950/30 shadow-[0_0_20px_rgba(217,70,239,0.4)] hover:shadow-[0_0_40px_rgba(217,70,239,0.7)] hover:bg-fuchsia-900/40' 
                         : 'border-zinc-800 text-stone-600 cursor-not-allowed'
                     }`}
                   >
                     <span className="text-sm font-bold uppercase tracking-widest mb-1">Призыв Таланта</span>
                     <span className="text-[10px] opacity-70 uppercase">Внутренний ученик</span>
-                    <span className={`font-mono mt-2 px-3 py-1 bg-zinc-950 border ${canSummonInner ? 'border-purple-500 text-amber-400' : 'border-zinc-800 text-zinc-600'}`}>
+                    <span className={`font-mono mt-2 px-3 py-1 bg-zinc-950/60 backdrop-blur-md border ${canSummonInner ? 'border-fuchsia-500 text-fuchsia-300 font-bold' : 'border-zinc-800 text-zinc-600'}`}>
                       {INNER_COST} ֏
                     </span>
                   </motion.button>
                   {innerCount >= maxInner && (
-                    <div className="text-[10px] text-red-500 uppercase tracking-widest mt-1">Достигнут лимит: {innerCount}/{maxInner}</div>
+                    <div className="text-[10px] text-fuchsia-400 uppercase tracking-widest mt-2 bg-fuchsia-500/10 border border-fuchsia-500/20 w-fit px-3 py-1 flex items-center justify-between gap-4 w-full">
+                      <span>Лимит: {innerCount}/{maxInner}</span>
+                      {timerStr && (
+                         <div className="flex items-center gap-2">
+                           <span>Ожидание: {timerStr}</span>
+                           <button 
+                             onClick={(e) => { e.stopPropagation(); onInstantLimit(); }}
+                             className="bg-purple-600/30 hover:bg-purple-500/50 text-white px-2 py-0.5 rounded border border-purple-500/50 flex items-center gap-1 transition-colors relative z-20"
+                           >
+                             <Zap size={10} className="text-purple-300" />
+                             Ускорить ({Math.ceil(Math.max(0, state.nextInnerLimitAt - Date.now()) / 1000) * 50} Ци)
+                           </button>
+                         </div>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
@@ -1541,18 +1684,18 @@ function AlchemyView({ state, onCraftPill, onInstantCraftPill, onCraftArtifact, 
         <div className="flex gap-2">
             <button 
                 onClick={() => setTab('alchemy')}
-                className={`px-4 py-2 border text-xs uppercase font-bold tracking-widest transition-colors ${tab === 'alchemy' ? 'border-purple-500/50 bg-purple-500/10 text-purple-400' : 'border-zinc-800 text-stone-500 hover:text-stone-300 hover:bg-zinc-900'}`}
+                className={`px-4 py-2 border text-xs uppercase font-bold tracking-widest transition-colors ${tab === 'alchemy' ? 'border-purple-500/50 bg-purple-500/10 text-purple-400' : 'border-zinc-800 text-stone-500 hover:text-stone-300 hover:bg-zinc-900/60 backdrop-blur-md'}`}
             >Алхимия</button>
             <button 
                 onClick={() => setTab('armory')}
-                className={`px-4 py-2 border text-xs uppercase font-bold tracking-widest transition-colors ${tab === 'armory' ? 'border-amber-500/50 bg-amber-500/10 text-amber-400' : 'border-zinc-800 text-stone-500 hover:text-stone-300 hover:bg-zinc-900'}`}
+                className={`px-4 py-2 border text-xs uppercase font-bold tracking-widest transition-colors ${tab === 'armory' ? 'border-amber-500/50 bg-amber-500/10 text-amber-400' : 'border-zinc-800 text-stone-500 hover:text-stone-300 hover:bg-zinc-900/60 backdrop-blur-md'}`}
             >Оружейная</button>
         </div>
       </div>
 
       {tab === 'alchemy' && (
         buildings.alchemyLab === 0 ? (
-          <div className="p-8 bg-zinc-900 border border-zinc-800 rounded-sm text-center">
+          <div className="p-8 bg-zinc-900/60 backdrop-blur-md border border-zinc-800 rounded-sm text-center">
             <FlaskConical size={32} className="mx-auto text-zinc-700 mb-4" />
             <h3 className="text-lg text-stone-300 mb-2">Алхимическая лаборатория не построена</h3>
             <p className="text-stone-500 text-sm">Постройте Лабораторию на вкладке Территория.</p>
@@ -1564,13 +1707,13 @@ function AlchemyView({ state, onCraftPill, onInstantCraftPill, onCraftArtifact, 
               const isCraftingThis = alchemyTask?.type === p.id;
               
               return (
-                <div key={p.id} className="p-6 bg-zinc-900 border border-zinc-800 rounded-sm flex flex-col justify-between">
+                <div key={p.id} className="p-6 bg-zinc-900/60 backdrop-blur-md border border-zinc-800 rounded-sm flex flex-col justify-between">
                   <div>
                     <h3 className="text-lg font-light text-stone-100 mb-4 flex items-center gap-2">
                         {p.icon} {p.name}
                     </h3>
                     <p className="text-sm text-stone-400 mb-6">{p.desc}</p>
-                    <div className="flex items-center justify-between bg-zinc-950 p-4 border border-zinc-800 mb-6">
+                    <div className="flex items-center justify-between bg-zinc-950/60 backdrop-blur-md p-4 border border-zinc-800 mb-6">
                         {renderCost(p.cost)}
                         <div className="text-center">
                           <div className="text-[10px] text-zinc-500 uppercase">Склад</div>
@@ -1623,7 +1766,7 @@ function AlchemyView({ state, onCraftPill, onInstantCraftPill, onCraftArtifact, 
 
       {tab === 'armory' && (
         (buildings.armory || 0) === 0 ? (
-          <div className="p-8 bg-zinc-900 border border-zinc-800 rounded-sm text-center">
+          <div className="p-8 bg-zinc-900/60 backdrop-blur-md border border-zinc-800 rounded-sm text-center">
             <Swords size={32} className="mx-auto text-zinc-700 mb-4" />
             <h3 className="text-lg text-stone-300 mb-2">Оружейная не построена</h3>
             <p className="text-stone-500 text-sm">Постройте Оружейную на вкладке Территория для ковки снаряжения.</p>
@@ -1635,13 +1778,13 @@ function AlchemyView({ state, onCraftPill, onInstantCraftPill, onCraftArtifact, 
               const isCraftingThis = craftingTask?.artifact.type === a.id;
               
               return (
-                <div key={a.id} className="p-6 bg-zinc-900 border border-zinc-800 rounded-sm flex flex-col justify-between">
+                <div key={a.id} className="p-6 bg-zinc-900/60 backdrop-blur-md border border-zinc-800 rounded-sm flex flex-col justify-between">
                   <div>
                     <h3 className="text-lg font-light text-stone-100 mb-4 flex items-center gap-2">
                         {a.icon} {a.name}
                     </h3>
                     <p className="text-sm text-stone-400 mb-6">{a.desc}</p>
-                    <div className="flex items-center justify-between bg-zinc-950 p-4 border border-zinc-800 mb-6">
+                    <div className="flex items-center justify-between bg-zinc-950/60 backdrop-blur-md p-4 border border-zinc-800 mb-6">
                         {renderCost(a.cost)}
                         <div className="text-center">
                           <div className="text-[10px] text-zinc-500 uppercase">Склад</div>
@@ -1698,6 +1841,8 @@ function AlchemyView({ state, onCraftPill, onInstantCraftPill, onCraftArtifact, 
 function CultivationView({ state, onPromote, onInstantPromote, onTrain, onInstantTrain }: { state: any, onPromote: any, onInstantPromote: any, onTrain: (id: string, durationSeconds: number) => void, onInstantTrain: (id: string) => void }) {
   const { disciples, inventory, cultivatingTasks, trainingTasks, resources } = state;
   const [now, setNow] = useState(Date.now());
+  const [sortByPower, setSortByPower] = useState(true);
+  const sortedDisciples = sortByPower ? [...disciples].sort((a,b) => b.power - a.power) : disciples;
 
   useEffect(() => {
     const interval = setInterval(() => setNow(Date.now()), 1000);
@@ -1729,21 +1874,29 @@ function CultivationView({ state, onPromote, onInstantPromote, onTrain, onInstan
           <h2 className="text-2xl font-light text-stone-100 mb-2">Зал Культивации</h2>
           <p className="text-stone-500 text-sm">Тренируйте учеников и проводите прорывы для кратного усиления боевой мощи.</p>
         </div>
-        <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 px-4 py-2">
-          <FlaskConical size={16} className="text-purple-400" />
-          <span className="text-sm text-stone-300">Пилюль Прорыва: <span className="font-mono text-amber-400">{inventory.breakthroughPills}</span></span>
+        <div className="flex items-center gap-4">
+          <button 
+             onClick={() => setSortByPower(!sortByPower)}
+             className={`px-4 py-2 text-xs uppercase tracking-widest font-medium transition-colors border ${sortByPower ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' : 'bg-zinc-900/60 backdrop-blur-md border-zinc-800 text-stone-500 hover:text-stone-300'}`}
+          >
+             Сортировка: {sortByPower ? 'По мощи' : 'По умолчанию'}
+          </button>
+          <div className="flex items-center gap-2 bg-zinc-900/60 backdrop-blur-md border border-zinc-800 px-4 py-2">
+            <FlaskConical size={16} className="text-purple-400" />
+            <span className="text-sm text-stone-300">Пилюль Прорыва: <span className="font-mono text-amber-400">{inventory.breakthroughPills}</span></span>
+          </div>
         </div>
       </div>
 
       {disciples.length === 0 ? (
-        <div className="p-8 bg-zinc-900 border border-zinc-800 rounded-sm text-center">
+        <div className="p-8 bg-zinc-900/60 backdrop-blur-md border border-zinc-800 rounded-sm text-center">
           <Swords size={32} className="mx-auto text-zinc-700 mb-4" />
           <h3 className="text-lg text-stone-300 mb-2">Зал пустует</h3>
           <p className="text-stone-500 text-sm">Наймите учеников, чтобы наставлять их на путь бессмертия.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4">
-          {disciples.map((d: any) => {
+          {sortedDisciples.map((d: any) => {
             const isMaxStage = d.cultivationStage >= 4;
             const task = cultivatingTasks?.[d.id];
             const trainTask = trainingTasks?.[d.id];
@@ -1783,35 +1936,38 @@ function CultivationView({ state, onPromote, onInstantPromote, onTrain, onInstan
             const trainDurationSeconds = Math.floor(60 * (d.cultivationStage + 1) * durationMultiplier);
 
             return (
-              <div key={d.id} className="relative p-6 bg-zinc-900 border border-zinc-800 rounded-sm flex flex-col md:flex-row gap-6 md:items-start">
-                <div className="flex-1 w-full flex flex-col gap-3">
-                  <div className="flex items-center gap-3">
+              <div key={d.id} className="relative p-4 bg-zinc-900/60 backdrop-blur-md border border-zinc-800 rounded-sm flex flex-col md:flex-row gap-4 md:items-center justify-between">
+                <div className="md:w-1/4 flex flex-col gap-1.5">
+                  <div className="flex items-center gap-2">
                     <span className={`text-sm tracking-widest uppercase font-bold ${getRarityTag(d.rarity).text}`}>{d.name}</span>
-                    <span className="text-[10px] text-zinc-500 border border-zinc-800 px-2 py-0.5 bg-zinc-950 uppercase">{currentStageName}</span>
-                    <span className="text-[10px] text-stone-300 border border-stone-800 px-2 py-0.5 bg-zinc-950 uppercase">Ур. {d.level || 1}</span>
                   </div>
-                  <div className="text-xs text-stone-400">
-                    Мощь: <span className="text-stone-200">{d.power} БМ</span>
+                  <div className="text-[11px] text-stone-400">
+                    Мощь: <span className="text-stone-200 font-mono">{d.power} БМ</span>
                   </div>
-                  
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-[10px] text-zinc-500 border border-zinc-800 px-2 py-0.5 bg-zinc-950/60 backdrop-blur-md uppercase">{currentStageName}</span>
+                    <span className="text-[10px] text-stone-300 border border-stone-800 px-2 py-0.5 bg-zinc-950/60 backdrop-blur-md uppercase">Ур. {d.level || 1}</span>
+                  </div>
+                </div>
+
+                <div className="flex-1 flex flex-col items-center text-center justify-center">
                   {!isMaxStage && (
-                    <div className="p-3 bg-zinc-950 border border-zinc-800 flex flex-col gap-2 mt-2">
-                      <div className="flex justify-between items-center">
-                         <span className="text-[10px] text-zinc-500 uppercase tracking-widest">Следующая стадия:</span>
-                         <span className="text-xs text-purple-400 uppercase font-mono text-right">{nextStageName}<br/><span className="text-[10px] opacity-75">{reqs.bonusText}</span></span>
-                      </div>
-                      <div className="text-[10px] text-stone-500">
-                        <span className="uppercase mr-2">Требования:</span> {reqs.text}
-                      </div>
+                    <div className="flex flex-col items-center pb-2 md:pb-0">
+                       <span className="text-[9px] text-zinc-500 uppercase tracking-widest mb-1">Следующая стадия:</span>
+                       <span className="text-[12px] text-purple-400 uppercase font-bold tracking-widest leading-none">{nextStageName}</span>
+                       {reqs.bonusText && <span className="text-[9px] text-purple-300/70 uppercase mt-1">{reqs.bonusText}</span>}
+                       <div className="text-[10px] text-stone-500 mt-2">
+                          <span className="uppercase opacity-70 mr-1">Требования:</span> {reqs.text}
+                       </div>
                     </div>
                   )}
                 </div>
 
-                <div className="flex gap-2 flex-col min-w-[240px]">
+                <div className="flex gap-2 flex-col min-w-[200px] justify-center md:pt-1">
                   {trainTask ? (
                     <>
-                      <div className="px-4 py-3 border border-sky-500/30 text-sky-400 bg-sky-500/10 text-xs font-mono font-bold tracking-widest flex justify-center items-center gap-2">
-                        <span className="text-[10px] uppercase text-sky-500/70">ТРЕНИРОВКА</span>
+                      <div className="px-3 py-2 border border-sky-500/30 text-sky-400 bg-sky-500/10 text-[11px] font-mono font-bold tracking-widest flex justify-center items-center gap-2">
+                        <span className="text-[9px] uppercase text-sky-500/70">ТРЕНИРОВКА</span>
                         {trainRemainStr}
                       </div>
                       <motion.button 
@@ -1819,19 +1975,19 @@ function CultivationView({ state, onPromote, onInstantPromote, onTrain, onInstan
                         whileTap={canInstantTrain ? { scale: 0.98 } : {}}
                         onClick={() => onInstantTrain(d.id)}
                         disabled={!canInstantTrain}
-                        className={`py-3 border text-xs uppercase font-bold tracking-widest transition-colors flex justify-center items-center gap-2 ${
+                        className={`py-2 border text-[11px] uppercase font-bold tracking-widest transition-colors flex justify-center items-center gap-2 ${
                           canInstantTrain 
                             ? 'border-sky-500/30 text-sky-400 hover:bg-sky-500/10' 
                             : 'border-zinc-800 text-stone-600 cursor-not-allowed'
                         }`}
                       >
-                        <Zap size={14} /> Ускорить ({expectedTrainQi} Ци)
+                        <Zap size={12} /> Ускорить ({expectedTrainQi} Ци)
                       </motion.button>
                     </>
                   ) : task ? (
                     <>
-                      <div className="px-4 py-3 border border-purple-500/30 text-purple-400 bg-purple-500/10 text-xs font-mono font-bold tracking-widest flex justify-center items-center gap-2">
-                        <span className="text-[10px] uppercase text-purple-500/70">ПРОРЫВ</span>
+                      <div className="px-3 py-2 border border-purple-500/30 text-purple-400 bg-purple-500/10 text-[11px] font-mono font-bold tracking-widest flex justify-center items-center gap-2">
+                        <span className="text-[9px] uppercase text-purple-500/70">ПРОРЫВ</span>
                         {remainStr}
                       </div>
                       <motion.button 
@@ -1839,13 +1995,13 @@ function CultivationView({ state, onPromote, onInstantPromote, onTrain, onInstan
                         whileTap={canInstant ? { scale: 0.98 } : {}}
                         onClick={() => onInstantPromote(d.id)}
                         disabled={!canInstant}
-                        className={`py-3 border text-xs uppercase font-bold tracking-widest transition-colors flex justify-center items-center gap-2 ${
+                        className={`py-2 border text-[11px] uppercase font-bold tracking-widest transition-colors flex justify-center items-center gap-2 ${
                           canInstant 
                             ? 'border-purple-500/30 text-purple-400 hover:bg-purple-500/10' 
                             : 'border-zinc-800 text-stone-600 cursor-not-allowed'
                         }`}
                       >
-                        <Zap size={14} /> Ускорить ({expectedQi} Ци)
+                        <Zap size={12} /> Ускорить ({expectedQi} Ци)
                       </motion.button>
                     </>
                   ) : (
@@ -1855,13 +2011,13 @@ function CultivationView({ state, onPromote, onInstantPromote, onTrain, onInstan
                         whileTap={canTrain ? { scale: 0.98 } : {}}
                         onClick={() => onTrain(d.id, trainDurationSeconds)}
                         disabled={!canTrain}
-                        className={`px-6 py-2 border text-[10px] uppercase font-bold tracking-widest transition-colors ${
+                        className={`px-4 py-1.5 border text-[10px] uppercase font-bold tracking-widest transition-colors ${
                           canTrain 
                             ? 'border-sky-500/30 text-sky-400 hover:bg-sky-500/10' 
-                            : 'border-zinc-800 text-stone-600 cursor-not-allowed'
+                            : 'border-zinc-700 text-stone-500 cursor-not-allowed opacity-80'
                         }`}
                       >
-                        Тренировать (-10 Ци / +1 Уровень)
+                        Тренировать (-10 Ци / +1 Ур)
                       </motion.button>
 
                       {!isMaxStage && (
@@ -1870,10 +2026,10 @@ function CultivationView({ state, onPromote, onInstantPromote, onTrain, onInstan
                           whileTap={canPromote ? { scale: 0.98 } : {}}
                           onClick={() => onPromote(d.id, durationSeconds)}
                           disabled={!canPromote}
-                          className={`px-6 py-3 border text-xs uppercase font-bold tracking-widest transition-colors mt-2 ${
+                          className={`px-4 py-2 border text-[11px] uppercase font-bold tracking-widest transition-all mt-1 ${
                             canPromote 
-                              ? 'border-purple-500/30 text-purple-400 hover:bg-purple-500/10' 
-                              : 'border-zinc-800 text-stone-600 cursor-not-allowed opacity-50'
+                              ? 'border-purple-500 text-purple-300 shadow-[0_0_10px_rgba(168,85,247,0.3)] hover:shadow-[0_0_20px_rgba(168,85,247,0.5)] hover:bg-purple-500/20' 
+                              : 'border-zinc-700 text-stone-500 cursor-not-allowed opacity-80'
                           }`}
                         >
                           Начать Прорыв
@@ -1902,6 +2058,8 @@ function ArenaView({ state, onReward }: { state: any, onReward: any }) {
   const [combatData, setCombatData] = useState<any>(null);
   const [battleType, setBattleType] = useState<'1v1' | 'team'>('1v1');
   const [opponents, setOpponents] = useState<any[]>([]);
+  const [sortByPower, setSortByPower] = useState(true);
+  const sortedDisciples = sortByPower ? [...disciples].sort((a,b) => b.power - a.power) : disciples;
 
   const [visibleLogCount, setVisibleLogCount] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -1923,7 +2081,7 @@ function ArenaView({ state, onReward }: { state: any, onReward: any }) {
         return () => clearTimeout(timer);
       } else if (!rewardClaimed) {
         setRewardClaimed(true);
-        onReward(combatData.rewards.stones, combatData.rewards.prestige, combatData.won, combatData.mode, combatData.participants);
+        onReward(combatData.rewards.stones, combatData.rewards.prestige, combatData.won, combatData.mode, combatData.participants, combatData);
       }
     }
   }, [combatState, combatData, visibleLogCount, rewardClaimed, onReward]);
@@ -1983,33 +2141,40 @@ function ArenaView({ state, onReward }: { state: any, onReward: any }) {
       "бьет в уязвимую точку"
     ];
 
-    let pHP = player.combatStats ? player.combatStats.health : player.power * 10;
-    let eHP = enemyDisciple.combatStats ? enemyDisciple.combatStats.health : enemyDisciple.power * 10;
+    // Балансировка на основе текущей мощи (power), т.к. combatStats статичны и не учитывают прокачку
+    let pHP = player.power * 12;
+    let eHP = enemyDisciple.combatStats ? enemyDisciple.combatStats.health : enemyDisciple.power * 12;
+    const maxPHP = pHP;
+    const maxEHP = eHP;
     const log = [];
     let round = 1;
 
     const pMult = elementsRules[player.element] === enemyDisciple.element ? 1.2 : 1.0;
     const eMult = elementsRules[enemyDisciple.element] === player.element ? 1.2 : 1.0;
 
-    let pAttack = player.combatStats ? player.combatStats.attack : player.power * 2;
-    let eAttack = enemyDisciple.combatStats ? enemyDisciple.combatStats.attack : enemyDisciple.power * 2;
+    let pAttack = Math.floor(player.power * 1.5);
+    let eAttack = enemyDisciple.combatStats ? enemyDisciple.combatStats.attack : enemyDisciple.power * 1.5;
+
+    log.push({ round: 0, actor: "Система", text: `Бой начинается!`, icon: 'system', pHP, eHP, maxPHP, maxEHP });
 
     while (pHP > 0 && eHP > 0 && round <= 10) {
        const flavor1 = flavorTexts[Math.floor(Math.random() * flavorTexts.length)];
        const pDmg = Math.floor(pAttack * pMult * (0.8 + Math.random() * 0.4));
        eHP -= pDmg;
-       log.push({ round, actor: player.name, text: `${flavor1} стихии ${player.element}, нанося ${pDmg} урона`, icon: player.element });
+       if (eHP < 0) eHP = 0;
+       log.push({ round, actor: player.name, text: `${flavor1} стихии ${player.element}, нанося ${pDmg} урона`, icon: player.element, pHP, eHP, maxPHP, maxEHP });
        if (eHP <= 0) {
-         log.push({ round, actor: "Система", text: `${enemyDisciple.name} падает без сил`, icon: 'defeat'});
+         log.push({ round, actor: "Система", text: `${enemyDisciple.name} падает без сил`, icon: 'defeat', pHP, eHP, maxPHP, maxEHP });
          break;
        }
 
        const flavor2 = flavorTexts[Math.floor(Math.random() * flavorTexts.length)];
        const eDmg = Math.floor(eAttack * eMult * (0.8 + Math.random() * 0.4));
        pHP -= eDmg;
-       log.push({ round, actor: enemyDisciple.name, text: `в ответ ${flavor2} (${enemyDisciple.element}) на ${eDmg} урона`, icon: enemyDisciple.element });
+       if (pHP < 0) pHP = 0;
+       log.push({ round, actor: enemyDisciple.name, text: `в ответ ${flavor2} (${enemyDisciple.element}) на ${eDmg} урона`, icon: enemyDisciple.element, pHP, eHP, maxPHP, maxEHP });
        if (pHP <= 0) {
-         log.push({ round, actor: "Система", text: `${player.name} не выдерживает удара и отступает`, icon: 'defeat'});
+         log.push({ round, actor: "Система", text: `${player.name} не выдерживает удара и отступает`, icon: 'defeat', pHP, eHP, maxPHP, maxEHP });
        }
        round++;
     }
@@ -2035,24 +2200,28 @@ function ArenaView({ state, onReward }: { state: any, onReward: any }) {
     const enemyTeam = { name: 'Секта Кровавого Лотоса', power: enemyPower };
     const playerTeam = { name: 'Ваша Секта', power: teamPower };
 
-    const baseHp = teamDisciples.reduce((acc: number, d: any) => acc + (d.combatStats ? d.combatStats.health : d.power * 10), 0);
-    const baseAttack = teamDisciples.reduce((acc: number, d: any) => acc + (d.combatStats ? d.combatStats.attack : d.power * 2), 0);
+    const baseHp = teamDisciples.reduce((acc: number, d: any) => acc + (d.power * 12), 0);
+    const baseAttack = teamDisciples.reduce((acc: number, d: any) => acc + (Math.floor(d.power * 1.5)), 0);
 
     let pHP = Math.floor(baseHp * 1.15);
-    let eHP = enemyPower * 10;
+    let eHP = enemyPower * 12;
+    const maxPHP = pHP;
+    const maxEHP = eHP;
     const log = [];
-    log.push({ round: 0, actor: 'Система', text: `Ваш отряд использует формацию [${formation}]`, icon: 'system' });
+    log.push({ round: 0, actor: 'Система', text: `Ваш отряд использует формацию [${formation}]`, icon: 'system', pHP, eHP, maxPHP, maxEHP });
     
     let round = 1;
     while (pHP > 0 && eHP > 0 && round <= 5) {
        const pDmg = Math.floor((baseAttack * 1.15) * (0.8 + Math.random() * 0.4));
        eHP -= pDmg;
-       log.push({ round, actor: playerTeam.name, text: `проводит скоординированную атаку, нанося ${pDmg} урона`, icon: 'attack' });
+       if (eHP < 0) eHP = 0;
+       log.push({ round, actor: playerTeam.name, text: `проводит скоординированную атаку, нанося ${pDmg} урона`, icon: 'attack', pHP, eHP, maxPHP, maxEHP });
        if (eHP <= 0) break;
 
-       const eDmg = Math.floor((enemyPower * 2) * (0.8 + Math.random() * 0.4));
+       const eDmg = Math.floor((enemyPower * 1.5) * (0.8 + Math.random() * 0.4));
        pHP -= eDmg;
-       log.push({ round, actor: enemyTeam.name, text: `совершает командный прорыв, нанося ${eDmg} урона`, icon: 'attack' });
+       if (pHP < 0) pHP = 0;
+       log.push({ round, actor: enemyTeam.name, text: `совершает командный прорыв, нанося ${eDmg} урона`, icon: 'attack', pHP, eHP, maxPHP, maxEHP });
        round++;
     }
 
@@ -2093,7 +2262,7 @@ function ArenaView({ state, onReward }: { state: any, onReward: any }) {
         </div>
 
         {disciples.length === 0 ? (
-          <div className="p-8 bg-zinc-900 border border-zinc-800 rounded-sm text-center">
+          <div className="p-8 bg-zinc-900/60 backdrop-blur-md border border-zinc-800 rounded-sm text-center">
             <Swords size={32} className="mx-auto text-zinc-700 mb-4" />
             <h3 className="text-lg text-stone-300 mb-2">Учеников пока нет</h3>
             <p className="text-stone-500 text-sm">Наймите учеников, чтобы участвовать в боях.</p>
@@ -2101,18 +2270,26 @@ function ArenaView({ state, onReward }: { state: any, onReward: any }) {
         ) : (
           battleType === '1v1' ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="p-6 bg-zinc-900 border border-zinc-800 rounded-sm">
-                 <h3 className="text-sm uppercase text-amber-500 tracking-widest mb-4">Выбор Бойца</h3>
+              <div className="p-6 bg-zinc-900/60 backdrop-blur-md border border-zinc-800 rounded-sm">
+                 <div className="flex justify-between items-center mb-4">
+                   <h3 className="text-sm uppercase text-amber-500 tracking-widest">Выбор Бойца</h3>
+                   <button 
+                     onClick={() => setSortByPower(!sortByPower)}
+                     className={`px-3 py-1 text-[10px] uppercase tracking-widest font-medium transition-colors border ${sortByPower ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' : 'bg-zinc-950/60 backdrop-blur-md border-zinc-800 text-stone-500 hover:text-stone-300'}`}
+                   >
+                     {sortByPower ? 'По мощи' : 'По умолч.'}
+                   </button>
+                 </div>
                  
                  <div className="grid grid-cols-2 gap-3 mb-6 max-h-64 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-zinc-700">
-                   {disciples.map((d: any) => (
+                   {sortedDisciples.map((d: any) => (
                      <button
                        key={d.id}
                        onClick={() => setSelectedId(d.id)}
                        className={`p-3 border text-left flex flex-col transition-all ${
                          selectedId === d.id
                            ? 'bg-amber-500/10 border-amber-500/50 text-amber-400'
-                           : 'bg-zinc-950 border-zinc-800 text-stone-300 hover:border-zinc-700'
+                           : 'bg-zinc-950/60 backdrop-blur-md border-zinc-800 text-stone-300 hover:border-zinc-700'
                        }`}
                      >
                        <span className="font-medium text-sm truncate w-full">{d.name}</span>
@@ -2126,9 +2303,9 @@ function ArenaView({ state, onReward }: { state: any, onReward: any }) {
                     whileTap={selectedId ? { scale: 0.98 } : {}}
                     onClick={findOpponents}
                     disabled={!selectedId}
-                    className={`w-full py-3 border text-xs uppercase font-bold tracking-widest transition-colors ${
+                    className={`w-full py-3 border text-xs uppercase font-bold tracking-widest transition-all ${
                       selectedId 
-                        ? 'border-amber-500/30 text-amber-400 hover:bg-amber-500/10' 
+                        ? 'border-amber-500 text-amber-300 shadow-[0_0_10px_rgba(245,158,11,0.3)] hover:shadow-[0_0_20px_rgba(245,158,11,0.5)] hover:bg-amber-500/20' 
                         : 'border-zinc-800 text-stone-600 cursor-not-allowed'
                     }`}
                  >
@@ -2139,7 +2316,7 @@ function ArenaView({ state, onReward }: { state: any, onReward: any }) {
                 <motion.div 
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  className="p-6 bg-zinc-950 border border-zinc-800 rounded-sm"
+                  className="p-6 bg-zinc-950/60 backdrop-blur-md border border-zinc-800 rounded-sm"
                 >
                    <h3 className="text-sm uppercase text-sky-500 tracking-widest mb-4">Характеристики</h3>
                    {(() => {
@@ -2157,7 +2334,7 @@ function ArenaView({ state, onReward }: { state: any, onReward: any }) {
               )}
             </div>
           ) : (
-            <div className="p-6 bg-zinc-900 border border-zinc-800 rounded-sm max-w-2xl">
+            <div className="p-6 bg-zinc-900/60 backdrop-blur-md border border-zinc-800 rounded-sm max-w-2xl">
               <h3 className="text-sm uppercase text-purple-500 tracking-widest mb-4">Командный Турнир Сект (5 на 5)</h3>
               
               {team.length === 0 ? (
@@ -2214,7 +2391,7 @@ function ArenaView({ state, onReward }: { state: any, onReward: any }) {
         </div>
 
         <div className="flex flex-col md:flex-row gap-6">
-          <div className="md:w-1/3 p-6 bg-zinc-950 border border-zinc-800 rounded-sm">
+          <div className="md:w-1/3 p-6 bg-zinc-950/60 backdrop-blur-md border border-zinc-800 rounded-sm">
              <h3 className="text-sm uppercase text-sky-500 tracking-widest mb-4">Ваш Боец</h3>
              {player && (
                <div className="space-y-4 text-sm text-stone-400">
@@ -2246,7 +2423,7 @@ function ArenaView({ state, onReward }: { state: any, onReward: any }) {
                const advOpp = elementsRules[opp.element] === player?.element;
 
                return (
-                 <div key={idx} className="p-4 bg-zinc-900 border border-zinc-800 hover:border-amber-500/50 transition-all rounded-sm flex flex-col justify-between group">
+                 <div key={idx} className="p-4 bg-zinc-900/60 backdrop-blur-md border border-zinc-800 hover:border-amber-500/50 transition-all rounded-sm flex flex-col justify-between group">
                    <div>
                      <h4 className="text-stone-200 text-base mb-1 truncate">{opp.name}</h4>
                      <div className="text-[10px] uppercase text-zinc-500 mb-4">{opp.role}</div>
@@ -2315,19 +2492,28 @@ function ArenaView({ state, onReward }: { state: any, onReward: any }) {
     show: { opacity: 1, x: 0, transition: { type: "spring" } }
   };
 
+  const currentLog = visibleLogCount > 0 && combatData?.log ? combatData.log[visibleLogCount - 1] : combatData?.log?.[0] || { pHP: 0, eHP: 0, maxPHP: 1, maxEHP: 1 };
+  const pHPPercent = Math.max(0, Math.min(100, (currentLog.pHP / currentLog.maxPHP) * 100)) || 0;
+  const eHPPercent = Math.max(0, Math.min(100, (currentLog.eHP / currentLog.maxEHP) * 100)) || 0;
+
   return (
     <motion.div 
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       className="space-y-6"
     >
-      <div className="p-6 bg-zinc-900 border border-zinc-800 rounded-sm relative">
+      <div className="p-6 bg-zinc-900/60 backdrop-blur-md border border-zinc-800 rounded-sm relative">
         <h2 className="text-2xl font-light text-stone-100 mb-6">Результат Дуэли</h2>
         
-        <div className="flex items-center justify-between mb-8 bg-zinc-950 p-4 border border-zinc-800">
-          <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="text-center w-1/3">
-            <div className="text-xl text-sky-300">{combatData.player.name}</div>
+        <div className="flex items-center justify-between mb-8 bg-zinc-950/60 backdrop-blur-md p-4 border border-zinc-800">
+          <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="text-center w-5/12">
+            <div className="text-xl text-sky-300 truncate">{combatData.player.name}</div>
             <div className="text-[10px] uppercase text-zinc-500 mt-1 mb-2">Ваша секта</div>
+            
+            <div className="w-full bg-zinc-900/60 backdrop-blur-md h-1.5 mt-2 mb-3 rounded-full overflow-hidden border border-zinc-800">
+               <div className="h-full bg-sky-500 transition-all duration-300" style={{ width: `${pHPPercent}%` }}></div>
+            </div>
+
             {combatData.mode === '1v1' && (
                <div className="flex justify-center gap-3 text-xs text-stone-400 font-mono">
                  <span><span className="text-zinc-500 lowercase">БМ:</span> {combatData.player.power}</span>
@@ -2340,12 +2526,17 @@ function ArenaView({ state, onReward }: { state: any, onReward: any }) {
                </div>
             )}
           </motion.div>
-          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-2xl text-stone-600 font-bold w-1/3 text-center">
+          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-2xl text-stone-600 font-bold w-2/12 text-center">
             VS
           </motion.div>
-          <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="text-center w-1/3">
-            <div className="text-xl text-red-400">{combatData.enemy.name}</div>
+          <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="text-center w-5/12">
+            <div className="text-xl text-red-400 truncate">{combatData.enemy.name}</div>
             <div className="text-[10px] uppercase text-zinc-500 mt-1 mb-2">Оппонент</div>
+            
+            <div className="w-full bg-zinc-900/60 backdrop-blur-md h-1.5 mt-2 mb-3 rounded-full overflow-hidden border border-zinc-800">
+               <div className="h-full bg-red-400 transition-all duration-300" style={{ width: `${eHPPercent}%` }}></div>
+            </div>
+
             {combatData.mode === '1v1' && (
                <div className="flex justify-center gap-3 text-xs text-stone-400 font-mono">
                  <span><span className="text-zinc-500 lowercase">БМ:</span> {combatData.enemy.power}</span>
@@ -2541,6 +2732,8 @@ function TacticsView({ state, onUpdate, onUpdateTeams, initialTab }: { state: an
   const innerDisciples = disciples.filter(isInnerDisciple);
 
   const [activeTab, setActiveTab] = useState<'teams' | 'tactics'>(initialTab || 'teams');
+  const [sortByPower, setSortByPower] = useState(true);
+  const sortedInnerDisciples = sortByPower ? [...innerDisciples].sort((a,b) => b.power - a.power) : innerDisciples;
 
   useEffect(() => {
     if (initialTab) {
@@ -2680,7 +2873,7 @@ function TacticsView({ state, onUpdate, onUpdateTeams, initialTab }: { state: an
              <select 
                 value={localTeamId} 
                 onChange={(e) => setLocalTeamId(e.target.value)}
-                className="bg-zinc-900 border border-zinc-800 text-stone-200 text-sm p-2 rounded focus:border-amber-500 outline-none"
+                className="bg-zinc-900/60 backdrop-blur-md border border-zinc-800 text-stone-200 text-sm p-2 rounded focus:border-amber-500 outline-none"
              >
                 {teams.map((t: any) => (
                   <option key={t.id} value={t.id}>
@@ -2690,7 +2883,7 @@ function TacticsView({ state, onUpdate, onUpdateTeams, initialTab }: { state: an
              </select>
              <button
                onClick={handleCreateTeam}
-               className="bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-stone-300 p-2 rounded transition-colors text-sm"
+               className="bg-zinc-900/60 backdrop-blur-md hover:bg-zinc-800 border border-zinc-800 text-stone-300 p-2 rounded transition-colors text-sm"
                title="Создать новый отряд"
              >
                + Новый
@@ -2698,7 +2891,7 @@ function TacticsView({ state, onUpdate, onUpdateTeams, initialTab }: { state: an
              {teams.length > 1 && (
                <button
                  onClick={handleDeleteTeam}
-                 className="bg-zinc-900 hover:bg-red-900/30 border border-zinc-800 hover:border-red-500/50 text-stone-500 hover:text-red-400 p-2 rounded transition-colors text-sm"
+                 className="bg-zinc-900/60 backdrop-blur-md hover:bg-red-900/30 border border-zinc-800 hover:border-red-500/50 text-stone-500 hover:text-red-400 p-2 rounded transition-colors text-sm"
                  title="Удалить отряд"
                >
                  Удалить
@@ -2710,7 +2903,7 @@ function TacticsView({ state, onUpdate, onUpdateTeams, initialTab }: { state: an
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
-          <div className="p-6 bg-zinc-900 border border-zinc-800 rounded-sm relative mt-4">
+          <div className="p-6 bg-zinc-900/60 backdrop-blur-md border border-zinc-800 rounded-sm relative mt-4">
             <h3 className="text-sm uppercase text-sky-400 tracking-widest mb-4">Карта Построения</h3>
             <div className="relative w-full h-[360px] bg-zinc-950/50 border border-zinc-800 rounded-sm flex items-center justify-center overflow-hidden">
                {/* Background pattern */}
@@ -2733,7 +2926,7 @@ function TacticsView({ state, onUpdate, onUpdateTeams, initialTab }: { state: an
                    >
                      {d ? (
                        <div className={`relative flex flex-col items-center group`}>
-                         <div className={`w-14 h-14 md:w-16 md:h-16 rounded-full border-2 bg-zinc-950 flex items-center justify-center overflow-hidden transition-colors ${isSelectedSlot ? 'border-sky-400 shadow-[0_0_15px_rgba(56,189,248,0.5)]' : 'border-zinc-500'}`}>
+                         <div className={`w-14 h-14 md:w-16 md:h-16 rounded-full border-2 bg-zinc-950/60 backdrop-blur-md flex items-center justify-center overflow-hidden transition-colors ${isSelectedSlot ? 'border-sky-400 shadow-[0_0_15px_rgba(56,189,248,0.5)]' : 'border-zinc-500'}`}>
                            <Users size={24} className={isSelectedSlot ? 'text-sky-400' : 'text-zinc-500'} />
                          </div>
                          <div className="mt-1 text-[10px] text-stone-300 font-mono text-center w-max bg-zinc-900/80 px-2 py-0.5 rounded border border-zinc-800">
@@ -2767,85 +2960,7 @@ function TacticsView({ state, onUpdate, onUpdateTeams, initialTab }: { state: an
             </div>
           </div>
 
-          {activeTab === 'teams' && selectedSlotIndex !== null && (
-            <div className="p-6 bg-zinc-900 border border-sky-500/30 rounded-sm shadow-[0_0_20px_rgba(56,189,248,0.05)] text-left">
-              <h3 className="text-sm uppercase text-sky-400 tracking-widest mb-2 border-b border-sky-400/20 pb-2">
-                Выбрать ученика для: {currentFormat.slots[selectedSlotIndex]?.label}
-              </h3>
-              <p className="text-[10px] uppercase text-amber-500/70 mb-4 font-mono tracking-wider">
-                Рекомендация: {currentFormat.slots[selectedSlotIndex]?.bonusText}
-              </p>
-              
-              {innerDisciples.length === 0 ? (
-                <p className="text-zinc-600 text-sm font-mono p-4 text-center">Нет внутренних учеников</p>
-              ) : (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-64 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-zinc-700">
-                  {innerDisciples.map((d: any) => {
-                    const isAlreadyAssigned = localTeam.includes(d.id);
-                    const isPerfectFit = currentFormat.slots[selectedSlotIndex]?.bonusRole?.includes(d.role);
-                    
-                    return (
-                      <button
-                        key={d.id}
-                        onClick={() => handleToggleDisciple(d.id)}
-                        disabled={isAlreadyAssigned && localTeam.indexOf(d.id) === selectedSlotIndex}
-                        className={`p-3 border text-left flex flex-col transition-all ${
-                          isAlreadyAssigned && localTeam.indexOf(d.id) === selectedSlotIndex
-                            ? 'bg-sky-500/10 border-sky-500/50 text-sky-400 opacity-100 cursor-not-allowed'
-                            : isPerfectFit 
-                              ? 'bg-amber-500/5 border-amber-500/30 text-amber-100 hover:bg-amber-500/20 hover:border-amber-500/50'
-                              : 'bg-zinc-950 border-zinc-800 text-stone-300 hover:border-zinc-700 opacity-60 hover:opacity-100'
-                        }`}
-                      >
-                        <span className="font-medium text-sm truncate w-full flex items-center justify-between">
-                          {d.name} {isAlreadyAssigned && localTeam.indexOf(d.id) !== selectedSlotIndex && <span className="text-sky-400 text-[10px]">(Свап)</span>}
-                        </span>
-                        <span className="text-[10px] uppercase font-mono mt-1 opacity-70">
-                          {d.role} | БМ: {d.power}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        <div className="space-y-6">
-          {activeTab === 'tactics' && (
-            <div className="p-6 bg-zinc-900 border border-zinc-800 rounded-sm">
-              <h3 className="text-sm uppercase text-amber-500 tracking-widest mb-4">Доступные Построения</h3>
-              <div className="space-y-3">
-                {FORMATIONS_DATA.map(f => {
-                  const hasStrategy = (state.player?.stats.strategy || 0) >= (f.reqStrategy || 0);
-                  return (
-                  <button
-                    key={f.name}
-                    onClick={() => hasStrategy && handleFormationChange(f.name)}
-                    disabled={!hasStrategy}
-                    className={`w-full text-left p-3 border transition-colors relative ${
-                      localFormationName === f.name 
-                        ? 'border-amber-500/50 bg-amber-500/10 text-amber-400' 
-                        : hasStrategy ? 'border-zinc-800 bg-zinc-950 text-stone-400 hover:border-zinc-700' : 'border-red-900/30 bg-zinc-950/50 text-stone-600 cursor-not-allowed'
-                    }`}
-                  >
-                    <div className="flex justify-between items-center mb-1">
-                       <span className="font-medium text-sm flex items-center gap-2">
-                         {f.name}
-                         {!hasStrategy && <span className="text-[10px] text-red-500 uppercase font-bold tracking-widest border border-red-500/50 px-1 rounded-xs bg-red-500/10">Треб. Стратегия: {f.reqStrategy}</span>}
-                       </span>
-                       <span className="text-[10px] font-mono px-2 py-0.5 bg-zinc-900 border border-zinc-800 text-zinc-500">Слотов: {f.slots.length}</span>
-                    </div>
-                    <div className="text-[10px] text-zinc-500 leading-tight">{f.desc}</div>
-                  </button>
-                )})}
-              </div>
-            </div>
-          )}
-
-          <div className="p-6 bg-zinc-900 border border-zinc-800 rounded-sm">
-             <h3 className="text-sm uppercase text-purple-400 tracking-widest mb-4">Статистика</h3>
+          <div className="p-6 bg-zinc-900/60 backdrop-blur-md border border-zinc-800 rounded-sm">
              {isFull ? (
                <div className="space-y-4 animate-in fade-in zoom-in-95 duration-500">
                   <div className="flex items-center justify-between text-sm border-b border-zinc-800/50 pb-2">
@@ -2865,6 +2980,91 @@ function TacticsView({ state, onUpdate, onUpdateTeams, initialTab }: { state: an
                </div>
              )}
           </div>
+
+          {activeTab === 'teams' && selectedSlotIndex !== null && (
+            <div className="p-6 bg-zinc-900/60 backdrop-blur-md border border-sky-500/30 rounded-sm shadow-[0_0_20px_rgba(56,189,248,0.05)] text-left">
+              <div className="flex justify-between items-center mb-2 border-b border-sky-400/20 pb-2">
+                <h3 className="text-sm uppercase text-sky-400 tracking-widest">
+                  Выбрать ученика для: {currentFormat.slots[selectedSlotIndex]?.label}
+                </h3>
+                <button 
+                  onClick={() => setSortByPower(!sortByPower)}
+                  className={`px-3 py-1 text-[10px] uppercase tracking-widest font-medium transition-colors border ${sortByPower ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' : 'bg-zinc-950/60 backdrop-blur-md border-zinc-800 text-stone-500 hover:text-stone-300'}`}
+                >
+                  {sortByPower ? 'По мощи' : 'По умолч.'}
+                </button>
+              </div>
+              <p className="text-[10px] uppercase text-amber-500/70 mb-4 font-mono tracking-wider">
+                Рекомендация: {currentFormat.slots[selectedSlotIndex]?.bonusText}
+              </p>
+              
+              {innerDisciples.length === 0 ? (
+                <p className="text-zinc-600 text-sm font-mono p-4 text-center">Нет внутренних учеников</p>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-64 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-zinc-700">
+                  {sortedInnerDisciples.map((d: any) => {
+                    const isAlreadyAssigned = localTeam.includes(d.id);
+                    const isPerfectFit = currentFormat.slots[selectedSlotIndex]?.bonusRole?.includes(d.role);
+                    
+                    return (
+                      <button
+                        key={d.id}
+                        onClick={() => handleToggleDisciple(d.id)}
+                        disabled={isAlreadyAssigned && localTeam.indexOf(d.id) === selectedSlotIndex}
+                        className={`p-3 border text-left flex flex-col transition-all ${
+                          isAlreadyAssigned && localTeam.indexOf(d.id) === selectedSlotIndex
+                            ? 'bg-sky-500/10 border-sky-500/50 text-sky-400 opacity-100 cursor-not-allowed'
+                            : isPerfectFit 
+                              ? 'bg-amber-500/5 border-amber-500/30 text-amber-100 hover:bg-amber-500/20 hover:border-amber-500/50'
+                              : 'bg-zinc-950/60 backdrop-blur-md border-zinc-800 text-stone-300 hover:border-zinc-700 opacity-60 hover:opacity-100'
+                        }`}
+                      >
+                        <span className="font-medium text-sm truncate w-full flex items-center justify-between">
+                          {d.name} {isAlreadyAssigned && localTeam.indexOf(d.id) !== selectedSlotIndex && <span className="text-sky-400 text-[10px]">(Свап)</span>}
+                        </span>
+                        <span className="text-[10px] uppercase font-mono mt-1 opacity-70">
+                          {d.role} | БМ: {d.power}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-6">
+          {activeTab === 'tactics' && (
+            <div className="p-6 bg-zinc-900/60 backdrop-blur-md border border-zinc-800 rounded-sm">
+              <h3 className="text-sm uppercase text-amber-500 tracking-widest mb-4">Доступные Построения</h3>
+              <div className="space-y-3">
+                {FORMATIONS_DATA.map(f => {
+                  const hasStrategy = (state.player?.stats.strategy || 0) >= (f.reqStrategy || 0);
+                  return (
+                  <button
+                    key={f.name}
+                    onClick={() => hasStrategy && handleFormationChange(f.name)}
+                    disabled={!hasStrategy}
+                    className={`w-full text-left p-3 border transition-colors relative ${
+                      localFormationName === f.name 
+                        ? 'border-amber-500/50 bg-amber-500/10 text-amber-400' 
+                        : hasStrategy ? 'border-zinc-800 bg-zinc-950/60 backdrop-blur-md text-stone-400 hover:border-zinc-700' : 'border-zinc-800 bg-zinc-950/50 text-stone-500 cursor-not-allowed opacity-70'
+                    }`}
+                  >
+                    <div className="flex justify-between items-center mb-1">
+                       <span className="font-medium text-sm flex items-center gap-2">
+                         {f.name}
+                         {!hasStrategy && <span className="text-[10px] text-stone-500 font-normal lowercase tracking-wide">треб. стратегия главы: {f.reqStrategy}</span>}
+                       </span>
+                       <span className="text-[10px] font-mono px-2 py-0.5 bg-zinc-900/60 backdrop-blur-md border border-zinc-800 text-zinc-500">Слотов: {f.slots.length}</span>
+                    </div>
+                    <div className="text-[10px] text-zinc-500 leading-tight">{f.desc}</div>
+                  </button>
+                )})}
+              </div>
+            </div>
+          )}
 
           <div className="flex gap-2">
             <motion.button 

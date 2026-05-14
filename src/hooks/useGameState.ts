@@ -150,6 +150,35 @@ const getInitialState = (): GameState => ({
   lastUpdate: Date.now(),
 });
 
+function gainExp(state: GameState, amount: number): GameState {
+  if (!state.player) return state;
+  let newExp = state.player.exp + amount;
+  let newLevel = state.player.level;
+  let newStats = { ...state.player.stats };
+
+  let expNeeded = newLevel * 100;
+  let leveledUp = false;
+  while (newExp >= expNeeded) {
+    newExp -= expNeeded;
+    newLevel++;
+    newStats.authority += 1;
+    newStats.charisma += 1;
+    newStats.strategy += 1;
+    newStats.wisdom += 1;
+    newStats.cunning += 1;
+    newStats.luck += 1;
+    expNeeded = newLevel * 100;
+    leveledUp = true;
+  }
+  
+  if (!leveledUp && newExp === state.player.exp) return state;
+
+  return {
+    ...state,
+    player: { ...state.player, exp: newExp, level: newLevel, stats: newStats }
+  };
+}
+
 export function useGameState() {
   const [state, setState] = useState<GameState>(() => {
     try {
@@ -234,6 +263,23 @@ export function useGameState() {
         let stateChanged = false;
         let moraleUpdated = false;
 
+        const maxInner = prev.player ? 5 + Math.floor(prev.player.stats.authority / 10) + (prev.bonusInnerLimit || 0) : 5;
+        const innerCount = prev.disciples.filter((d: any) => d.type === 'inner' || ['Эпический', 'Легендарный', 'Мифический'].includes(d.rarity)).length;
+        
+        let newBonusInnerLimit = prev.bonusInnerLimit;
+        let newNextInnerLimitAt = prev.nextInnerLimitAt;
+
+        if (innerCount >= maxInner && !newNextInnerLimitAt) {
+           newNextInnerLimitAt = now + 60 * 1000; // 1 minute cooldown to increase limit
+           stateChanged = true;
+        }
+
+        if (newNextInnerLimitAt && now >= newNextInnerLimitAt) {
+          stateChanged = true;
+          newNextInnerLimitAt = undefined;
+          newBonusInnerLimit = (newBonusInnerLimit || 0) + 1;
+        }
+
         if (!prev.lastMoraleUpdate || now - prev.lastMoraleUpdate >= 60000) {
           const leavingDisciples: string[] = [];
           const charisma = prev.player?.stats.charisma || 0;
@@ -242,10 +288,11 @@ export function useGameState() {
 
           newDisciples = newDisciples.map(d => {
             const newLoyalty = Math.max(0, (d.loyalty || 0) - 1);
-            if (newLoyalty < 20 && Math.random() < leaveChance) {
-              // chance to leave per minute if loyalty < 20, mitigated by charisma
-              leavingDisciples.push(d.id);
-            }
+            // Temporarily disable disciple leaving
+            // if (newLoyalty < 20 && Math.random() < leaveChance) {
+            //   // chance to leave per minute if loyalty < 20, mitigated by charisma
+            //   leavingDisciples.push(d.id);
+            // }
             return {
               ...d,
               morale: Math.min(100, Math.max(0, (d.morale ?? 100) - moraleDrop)), 
@@ -338,6 +385,8 @@ export function useGameState() {
           craftingTask: stateChanged ? newCraftingTask : prev.craftingTask,
           cultivatingTasks: stateChanged ? newCultivatingTasks : prev.cultivatingTasks,
           trainingTasks: stateChanged ? newTrainingTasks : prev.trainingTasks,
+          nextInnerLimitAt: stateChanged ? newNextInnerLimitAt : prev.nextInnerLimitAt,
+          bonusInnerLimit: stateChanged ? newBonusInnerLimit : prev.bonusInnerLimit,
           pendingResources: {
             stones: (prev.pendingResources?.stones || 0) + stoneIncome,
             ore: (prev.pendingResources?.ore || 0) + oreIncome,
@@ -365,7 +414,7 @@ export function useGameState() {
             newResources[key] = (newResources[key] || 0) - v;
         });
         
-        return {
+        return gainExp({
           ...prev,
           resources: newResources,
           buildingUpgrades: {
@@ -375,7 +424,7 @@ export function useGameState() {
               finishAt: Date.now() + durationSeconds * 1000
             }
           }
-        };
+        }, 50);
       }
       return prev;
     });
@@ -391,7 +440,7 @@ export function useGameState() {
         if (prev.resources.qi >= expectedQi) {
           const newUpgrades = { ...prev.buildingUpgrades };
           delete newUpgrades[buildingId];
-          return {
+          return gainExp({
             ...prev,
             resources: {
               ...prev.resources,
@@ -402,7 +451,7 @@ export function useGameState() {
               [buildingId]: upgrade.targetLevel,
             },
             buildingUpgrades: newUpgrades,
-          };
+          }, 20);
         }
       }
       return prev;
@@ -412,14 +461,14 @@ export function useGameState() {
   const addDisciple = useCallback((disciple: Disciple, cost: number) => {
     setState((prev) => {
       if (prev.resources.stones >= cost) {
-        return {
+        return gainExp({
           ...prev,
           resources: {
             ...prev.resources,
             stones: prev.resources.stones - cost,
           },
           disciples: [...prev.disciples, disciple],
-        };
+        }, 20);
       }
       return prev;
     });
@@ -447,7 +496,7 @@ export function useGameState() {
             newResources[key] = (newResources[key] || 0) - v;
         });
         
-        return {
+        return gainExp({
           ...prev,
           resources: newResources,
           alchemyTask: {
@@ -455,7 +504,7 @@ export function useGameState() {
             count: 1,
             finishAt: Date.now() + durationSeconds * 1000
           }
-        };
+        }, 10);
       }
       return prev;
     });
@@ -468,7 +517,7 @@ export function useGameState() {
         const expectedQi = Math.ceil(remainingMs / 1000) * 10;
         if (prev.resources.qi >= expectedQi) {
           const pType = prev.alchemyTask.type;
-          return {
+          return gainExp({
             ...prev,
             resources: {
               ...prev.resources,
@@ -479,7 +528,7 @@ export function useGameState() {
               [pType]: prev.inventory[pType] + prev.alchemyTask.count
             },
             alchemyTask: undefined
-          };
+          }, 5);
         }
       }
       return prev;
@@ -495,14 +544,14 @@ export function useGameState() {
             const key = k as keyof typeof newResources;
             newResources[key] = (newResources[key] || 0) - v;
         });
-        return {
+        return gainExp({
           ...prev,
           resources: newResources,
           craftingTask: {
             artifact,
             finishAt: Date.now() + durationSeconds * 1000
           }
-        }
+        }, 15);
       }
       return prev;
     });
@@ -514,7 +563,7 @@ export function useGameState() {
         const remainingMs = Math.max(0, prev.craftingTask.finishAt - Date.now());
         const expectedQi = Math.ceil(remainingMs / 1000) * 10;
         if (prev.resources.qi >= expectedQi) {
-          return {
+          return gainExp({
             ...prev,
             resources: {
               ...prev.resources,
@@ -525,7 +574,7 @@ export function useGameState() {
               artifacts: [...(prev.inventory.artifacts || []), prev.craftingTask.artifact],
             },
             craftingTask: undefined
-          };
+          }, 10);
         }
       }
       return prev;
@@ -717,9 +766,9 @@ export function useGameState() {
     });
   }, []);
 
-  const claimArenaReward = useCallback((stones: number, prestige: number, isWin: boolean, mode: string, participants: string[] = []) => {
+  const claimArenaReward = useCallback((stones: number, prestige: number, isWin: boolean, mode: string, participants: string[] = [], combatData?: any) => {
     setState((prev) => {
-      const arena = prev.arena || { rating: 1000, duelsPlayed: 0, duelsWon: 0, tournamentsPlayed: 0, tournamentsWon: 0 };
+      const arena = prev.arena || { rating: 1000, duelsPlayed: 0, duelsWon: 0, tournamentsPlayed: 0, tournamentsWon: 0, history: [] };
       let newArena = { ...arena };
       const ratingGain = isWin ? 10 : -5;
       newArena.rating = Math.max(100, newArena.rating + ratingGain);
@@ -730,6 +779,18 @@ export function useGameState() {
       } else if (mode === 'team') {
         newArena.tournamentsPlayed = (newArena.tournamentsPlayed || 0) + 1;
         if (isWin) newArena.tournamentsWon = (newArena.tournamentsWon || 0) + 1;
+      }
+      
+      if (combatData) {
+        newArena.history = [...(newArena.history || []), {
+           ...combatData,
+           id: Date.now().toString() + Math.random().toString(),
+           timestamp: Date.now(),
+           playerTeamName: combatData.player.name,
+           enemyTeamName: combatData.enemy.name,
+           playerPower: combatData.player.power,
+           enemyPower: combatData.enemy.power,
+        }].slice(-20); // Keep last 20
       }
 
       const newDisciples = prev.disciples.map(d => {
@@ -748,7 +809,7 @@ export function useGameState() {
         return d;
       });
 
-      return {
+      return gainExp({
         ...prev,
         resources: {
           ...prev.resources,
@@ -757,7 +818,7 @@ export function useGameState() {
         },
         arena: newArena,
         disciples: newDisciples
-      };
+      }, isWin ? 50 : 20);
     });
   }, []);
 
@@ -792,7 +853,7 @@ export function useGameState() {
         const dIndex = prev.disciples.findIndex(d => d.id === discipleId);
         if (dIndex === -1) return prev;
         
-        return {
+        return gainExp({
           ...prev,
           resources: {
             ...prev.resources,
@@ -804,7 +865,7 @@ export function useGameState() {
               finishAt: Date.now() + durationSeconds * 1000
             }
           }
-        };
+        }, 15);
       }
       return prev;
     });
@@ -829,7 +890,7 @@ export function useGameState() {
              newDisciples[dIndex] = d;
           }
 
-          return {
+          return gainExp({
             ...prev,
             resources: {
               ...prev.resources,
@@ -837,7 +898,7 @@ export function useGameState() {
             },
             disciples: newDisciples,
             trainingTasks: newTrainingTasks
-          };
+          }, 10);
         }
       }
       return prev;
@@ -876,6 +937,27 @@ export function useGameState() {
     setState({ ...getInitialState(), lastUpdate: Date.now() });
   }, []);
 
+  const instantIncreaseInnerLimit = useCallback(() => {
+    setState((prev) => {
+      if (prev.nextInnerLimitAt) {
+        const remainingMs = Math.max(0, prev.nextInnerLimitAt - Date.now());
+        const expectedQi = Math.ceil(remainingMs / 1000) * 50; // 50 Qi per second
+        if (prev.resources.qi >= expectedQi) {
+          return gainExp({
+            ...prev,
+            resources: {
+              ...prev.resources,
+              qi: prev.resources.qi - expectedQi,
+            },
+            nextInnerLimitAt: undefined,
+            bonusInnerLimit: (prev.bonusInnerLimit || 0) + 1,
+          }, 10);
+        }
+      }
+      return prev;
+    });
+  }, []);
+
   const addCheats = useCallback(() => {
     setState((prev) => ({
       ...prev,
@@ -895,5 +977,5 @@ export function useGameState() {
     }));
   }, []);
 
-  return { state, upgradeBuilding, instantUpgradeBuilding, claimResources, addDisciple, changeDiscipleRank, craftPill, instantCraftPill, craftArtifact, instantCraftArtifact, equipArtifact, unequipArtifact, usePill, promoteDisciple, instantPromoteDisciple, trainDisciple, instantTrainDisciple, claimArenaReward, updateTactics, updateTeams, clearSave, addCheats };
+  return { state, upgradeBuilding, instantUpgradeBuilding, claimResources, addDisciple, changeDiscipleRank, craftPill, instantCraftPill, craftArtifact, instantCraftArtifact, equipArtifact, unequipArtifact, usePill, promoteDisciple, instantPromoteDisciple, trainDisciple, instantTrainDisciple, claimArenaReward, updateTactics, updateTeams, clearSave, addCheats, instantIncreaseInnerLimit };
 }
